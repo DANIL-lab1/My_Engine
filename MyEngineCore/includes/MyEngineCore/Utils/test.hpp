@@ -1,0 +1,3 @@
+namespace MyEngine {
+	void sayHello();
+}
