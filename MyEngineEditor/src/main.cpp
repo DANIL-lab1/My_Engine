@@ -7,7 +7,7 @@ using namespace std;
 int main() {
 	cout << "Hello from MyEngineEditor!" << endl;
 
-	MyEngine::sayHello();
+	MyEngine::checkGLFW();
 
 	cin.get();
 }
