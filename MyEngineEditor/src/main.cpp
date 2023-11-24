@@ -1,13 +1,24 @@
 #include <iostream>
-
-#include "MyEngineCore/Utils/test.hpp"
+#include <memory>
+#include "MyEngineCore/Application.hpp"
 
 using namespace std;
 
-int main() {
-	cout << "Hello from MyEngineEditor!" << endl;
+class MyApp :public MyEngine::Application {
+	virtual void on_update() override {
+		cout << "Update frame: " << frame++ << endl;
+	}
 
-	MyEngine::checkGLFW();
+	int frame = 0;
+};
+
+int main() {
+	
+	auto myApp = make_unique<MyApp>();
+
+	int returnCode = myApp->start(1024, 768, "My first App");
 
 	cin.get();
+
+	return returnCode;
 }

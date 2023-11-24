@@ -1,3 +1,0 @@
-namespace MyEngine {
-	int checkGLFW();
-}

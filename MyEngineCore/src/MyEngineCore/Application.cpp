@@ -1,16 +1,21 @@
-#include <iostream>
+#pragma once
 
-#include "MyEngineCore/Utils/test.hpp"
+#include "MyEngineCore/Application.hpp"
 
 #include <GLFW/glfw3.h>
 
-using namespace std;
+#include <iostream>
 
 namespace MyEngine {
-    
-    int checkGLFW() {
-        cout << "Hello from MyEngineCore!" << endl;
 
+    // Реализация конструктора
+	Application::Application() {}
+	
+    // Реализация деструктора
+	Application::~Application() {}
+
+    // Функция запуска приложения. В данный момент мы передали ей код для создания базового окна
+	int Application::start(unsigned int window_width, unsigned int window_height, const char* title) {
         GLFWwindow* window;
 
         /* Initialize the library */
@@ -18,7 +23,7 @@ namespace MyEngine {
             return -1;
 
         /* Create a windowed mode window and its OpenGL context */
-        window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
+        window = glfwCreateWindow(window_width, window_height, title, NULL, NULL);
         if (!window)
         {
             glfwTerminate();
@@ -39,8 +44,13 @@ namespace MyEngine {
 
             /* Poll for and process events */
             glfwPollEvents();
+
+            // Реализация функции обновления
+            on_update();
         }
+
         glfwTerminate();
         return 0;
-    }
+	}
+
 }

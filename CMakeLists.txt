@@ -2,8 +2,6 @@ cmake_minimum_required(VERSION 3.12)
 
 set(PROJECT_NAME MyEngine)
 
-#project(MyEngine)
-
 add_subdirectory(MyEngineCore)
 add_subdirectory(MyEngineEditor)
 
