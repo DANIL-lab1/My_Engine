@@ -6,7 +6,7 @@ using namespace std;
 
 class MyApp :public MyEngine::Application {
 	virtual void on_update() override {
-		cout << "Update frame: " << frame++ << endl;
+		//cout << "Update frame: " << frame++ << endl;
 	}
 
 	int frame = 0;

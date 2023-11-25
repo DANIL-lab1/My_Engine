@@ -1,6 +1,8 @@
 // Заголовочный файл с классом приложения для игрового движка
 #pragma once
 
+#include <memory>
+
 namespace MyEngine {
 	
 	// Класс приложения
@@ -20,7 +22,10 @@ namespace MyEngine {
 		virtual int start(unsigned int window_width, unsigned int window_height, const char* title);
 
 		// Функция, которая вызывается каждый раз для обновления событий в окне
-		virtual void on_update() {};
+		virtual void on_update() {}
+
+	private:
+		std::unique_ptr<class Window> m_pWindow;
 	};
 
 }
