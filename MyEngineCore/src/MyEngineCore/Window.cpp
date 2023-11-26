@@ -9,7 +9,7 @@ namespace MyEngine {
     static bool s_GLFW_initialized = false;
 
 	Window::Window(std::string title, const unsigned int width, const unsigned int height)
-		: m_title(std::move(title)), m_width(width), m_height(height) {
+        : m_data({ std::move(title), width, height }) {
 		int resultCode = init();
 	}
 
@@ -17,22 +17,22 @@ namespace MyEngine {
 		shutdown();
 	}
 
-	int Window::init() {
-		
-        LOG_INFO("Creating window '{0}' width size {1}x{2}!", m_title, m_width, m_height);
+    int Window::init() {
+
+        LOG_INFO("Creating window '{0}' width size {1}x{2}!", m_data.title, m_data.width, m_data.height);
 
         if (!s_GLFW_initialized) {
             if (!glfwInit()) {
                 LOG_CRITICAL("Can't initialize GLFW!");
-                return -1; 
+                return -1;
             }
             s_GLFW_initialized = true;
         }
 
-        m_pWindow = glfwCreateWindow(m_width, m_height, m_title.c_str(), nullptr, nullptr);
+        m_pWindow = glfwCreateWindow(m_data.width, m_data.height, m_data.title.c_str(), nullptr, nullptr);
         if (!m_pWindow)
         {
-            LOG_CRITICAL("Can't create window {0} width size {1}x{2}!", m_title, m_width, m_height);
+            LOG_CRITICAL("Can't create window {0} width size {1}x{2}!", m_data.title, m_data.width, m_data.height);
             glfwTerminate();
             return -2;
         }
@@ -44,6 +44,20 @@ namespace MyEngine {
             LOG_CRITICAL("Failed to initialize GLAD");
             return -3;
         }
+
+        glfwSetWindowUserPointer(m_pWindow, &m_data);
+
+        glfwSetWindowSizeCallback(m_pWindow, [](GLFWwindow* pWindow, int width, int height) {
+            WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(pWindow));
+            data.width = width;
+            data.height = height;
+
+            Event event;
+            event.width = width;
+            event.height - height;
+            data.eventCallbackFn(event);
+            }
+    );
 
         return 0;
 	}
