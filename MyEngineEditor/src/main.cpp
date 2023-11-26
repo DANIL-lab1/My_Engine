@@ -1,3 +1,5 @@
+// Главный файл всей программы
+
 #include <iostream>
 #include <memory>
 #include "MyEngineCore/Application.hpp"
@@ -14,8 +16,10 @@ class MyApp :public MyEngine::Application {
 
 int main() {
 	
+	// Создание приложения
 	auto myApp = make_unique<MyApp>();
 
+	// Изначальные настройки приложения
 	int returnCode = myApp->start(1024, 768, "My first App");
 
 	cin.get();

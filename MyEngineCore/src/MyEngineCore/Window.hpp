@@ -14,7 +14,7 @@ namespace MyEngine {
 	// Класс окна игрового движка
 	class Window {
 	public:
-		using EventCallbackFn = std::function<void(Event&)>;
+		using EventCallbackFn = std::function<void(BaseEvent&)>;
 
 		// Конструктор и деструктор
 		Window(std::string title, const unsigned int width, const unsigned int height);
@@ -36,6 +36,7 @@ namespace MyEngine {
 		}
 
 	private:
+		// Структура окна с переменными: название, ширина, длина и обработчик событий
 		struct WindowData {
 			std::string title;
 			unsigned int width;
@@ -43,9 +44,11 @@ namespace MyEngine {
 			EventCallbackFn eventCallbackFn;
 		};
 
+		// Инициализация и закрытие окна
 		int init();
 		void shutdown();
 
+		// Указатель на окно и имя структуры
 		GLFWwindow* m_pWindow = nullptr;
 		WindowData m_data;
 	};

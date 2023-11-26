@@ -1,6 +1,8 @@
 // Заголовочный файл с классом приложения для игрового движка
 #pragma once
 
+#include "MyEngineCore/Event.hpp"
+
 #include <memory>
 
 namespace MyEngine {
@@ -25,7 +27,12 @@ namespace MyEngine {
 		virtual void on_update() {}
 
 	private:
+		// Переменная для работы с окном
 		std::unique_ptr<class Window> m_pWindow;
+
+		// Обработчик событий и переменная состояния закрытия окна
+		EventDispatcher m_event_dispatcher;
+		bool m_bCloseWindow = false;
 	};
 
 }
