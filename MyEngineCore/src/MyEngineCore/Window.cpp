@@ -6,6 +6,11 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include <imgui/imgui.h>
+#include <imgui/backends/imgui_impl_opengl3.h>
+
+#include <imgui/backends/imgui_impl_glfw.h>
+
 namespace MyEngine {
 	
     // Переменная инициализация
@@ -15,6 +20,15 @@ namespace MyEngine {
 	Window::Window(std::string title, const unsigned int width, const unsigned int height)
         : m_data({ std::move(title), width, height }) {
 		int resultCode = init();
+
+        // Проверка версии 
+        IMGUI_CHECKVERSION();
+        // Создание контекстка
+        ImGui::CreateContext();
+        // Инициализация openGL
+        ImGui_ImplOpenGL3_Init();
+        // Подключаем OpenGL для редактирования
+        ImGui_ImplGlfw_InitForOpenGL(m_pWindow, true);
 	}
 
     // Деструктор и закрытие игрового движка
@@ -95,10 +109,35 @@ namespace MyEngine {
         glfwTerminate();
     }
 
-    // Фукнция обновления игрового движка
+    // Функция обновления игрового движка
     void Window::on_update() {
-        glClearColor(1, 0, 0, 0);
+        // Делаем выборку цвета фона динамичной
+        glClearColor(m_background_color[0], m_background_color[1], m_background_color[2], m_background_color[3]);
         glClear(GL_COLOR_BUFFER_BIT);
+
+        // Задание размеров окна
+        ImGuiIO& io = ImGui::GetIO();
+        io.DisplaySize.x = static_cast<float>(get_width());
+        io.DisplaySize.y = static_cast<float>(get_height());
+
+        // Создание фрейма для рисования
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        // Данные для окна
+        ImGui::ShowDemoWindow();
+
+        // Запуск работы приложения (инициализация, работа и закрытие)
+        ImGui::Begin("Background Color Window");
+        ImGui::ColorEdit4("Background Color", m_background_color);
+        ImGui::End();
+
+        // Отрисовка данных и рендер
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+
         glfwSwapBuffers(m_pWindow);
         glfwPollEvents();
     }
