@@ -2,6 +2,7 @@
 
 #include "MyEngineCore/Window.hpp"
 #include "MyEngineCore/Log.hpp"
+#include "MyEngineCore/Rendering/OpenGL/ShaderProgram.hpp"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -62,7 +63,7 @@ namespace MyEngine {
         "}";
 
     // Две переменные для шейдеров (хранения и обработки)
-    GLuint shader_program;
+    std::unique_ptr<ShaderProgram> p_shader_program;
     GLuint vao;
 
     // Конструктор и запуск игрового движка
@@ -156,25 +157,11 @@ namespace MyEngine {
                 glViewport(0, 0, width, height);
             });
 
-        // Вертексный шейдер (создание, задание и инициализация его в проекте)
-        GLuint vs = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vs, 1, &vertex_shader, nullptr);
-        glCompileShader(vs);
-
-        // Фрагментный шейдер (создание, задание и инициализация его в проекте)
-        GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fs, 1, &fragment_shader, nullptr);
-        glCompileShader(fs);
-
-        // Обработка шейдеров с помощью шейдерной программы (инициализация программы, обработка двух шейдеров и создание итоговой программы) 
-        shader_program = glCreateProgram();
-        glAttachShader(shader_program, vs);
-        glAttachShader(shader_program, fs);
-        glLinkProgram(shader_program);
-
-        // Удаляем использованные шейдеры
-        glDeleteShader(vs);
-        glDeleteShader(fs);
+        p_shader_program = std::make_unique<ShaderProgram>(vertex_shader, fragment_shader);
+        if (!p_shader_program->isCompiled())
+        {
+            return false;
+        }
 
         // Два массива памяти для видеокарты
 
@@ -222,7 +209,7 @@ namespace MyEngine {
         glClear(GL_COLOR_BUFFER_BIT);
 
         // Отрисовка треугольника (подключение программы шейдеров, подключаем vertex array object (обработка), сама отрисовка треуголника)
-        glUseProgram(shader_program);
+        p_shader_program->bind();
         glBindVertexArray(vao);
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
