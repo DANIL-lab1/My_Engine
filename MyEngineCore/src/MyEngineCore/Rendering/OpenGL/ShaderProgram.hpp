@@ -5,13 +5,13 @@ namespace MyEngine {
     class ShaderProgram
     {
     public:
-        // Создаём конструктор и деструктор
+        // Создаём конструктор, копирующий конструктор, оператор присваивания и деструктор
         ShaderProgram(const char* vertex_shader_src, const char* fragment_shader_src);
         ShaderProgram(ShaderProgram&&);
         ShaderProgram& operator=(ShaderProgram&&);
         ~ShaderProgram();
 
-        // Удаляем конструкторы и деструкторы
+        // Удаляем пустой конструктор, копирующий конструктор и оператор присваивания
         ShaderProgram() = delete;
         ShaderProgram(const ShaderProgram&) = delete;
         ShaderProgram& operator=(const ShaderProgram&) = delete;

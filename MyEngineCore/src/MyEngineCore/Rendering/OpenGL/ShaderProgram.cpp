@@ -6,16 +6,16 @@
 
 namespace MyEngine
 {
-    bool create_shader(const char* source, const GLenum shader_type, GLuint& shader_id)
-    {
+    // Переменная, обозначающая удачное создание программы шейдеров
+    bool create_shader(const char* source, const GLenum shader_type, GLuint& shader_id){
         shader_id = glCreateShader(shader_type);
         glShaderSource(shader_id, 1, &source, nullptr);
         glCompileShader(shader_id);
 
         GLint success;
         glGetShaderiv(shader_id, GL_COMPILE_STATUS, &success);
-        if (success == GL_FALSE)
-        {
+        // Если произошла ошибка, выводим статус программы
+        if (success == GL_FALSE){
             char info_log[1024];
             glGetShaderInfoLog(shader_id, 1024, nullptr, info_log);
 
@@ -25,35 +25,35 @@ namespace MyEngine
         return true;
     }
 
-
-    ShaderProgram::ShaderProgram(const char* vertex_shader_src, const char* fragment_shader_src)
-    {
+    // Конструктор программы шейдеров
+    ShaderProgram::ShaderProgram(const char* vertex_shader_src, const char* fragment_shader_src){
         GLuint vertex_shader_id = 0;
-        if (!create_shader(vertex_shader_src, GL_VERTEX_SHADER, vertex_shader_id))
-        {
+        if (!create_shader(vertex_shader_src, GL_VERTEX_SHADER, vertex_shader_id)){
             LOG_CRITICAL("VERTEX SHADER: compile-time error!");
             glDeleteShader(vertex_shader_id);
             return;
         }
 
         GLuint fragment_shader_id = 0;
-        if (!create_shader(fragment_shader_src, GL_FRAGMENT_SHADER, fragment_shader_id))
-        {
+        // Если произошла ошибка, удаляем оба шейдера
+        if (!create_shader(fragment_shader_src, GL_FRAGMENT_SHADER, fragment_shader_id)){
             LOG_CRITICAL("FRAGMENT SHADER: compile-time error!");
             glDeleteShader(vertex_shader_id);
             glDeleteShader(fragment_shader_id);
             return;
         }
 
+        // Создание шейдерной программы
         m_id = glCreateProgram();
         glAttachShader(m_id, vertex_shader_id);
         glAttachShader(m_id, fragment_shader_id);
         glLinkProgram(m_id);
 
+        // Проверка статуса программы
         GLint success;
         glGetProgramiv(m_id, GL_LINK_STATUS, &success);
-        if (success == GL_FALSE)
-        {
+        // Если произошла ошибка, выводим статус программы и удаляем оба шейдера
+        if (success == GL_FALSE){
             GLchar info_log[1024];
             glGetProgramInfoLog(m_id, 1024, nullptr, info_log);
             LOG_CRITICAL("SHADER PROGRAM: Link-time error:\n{0}", info_log);
@@ -63,34 +63,34 @@ namespace MyEngine
             glDeleteShader(fragment_shader_id);
             return;
         }
-        else
-        {
+        else{
             m_isCompiled = true;
         }
 
+        // Удаление использванных шейдеров
         glDetachShader(m_id, vertex_shader_id);
         glDetachShader(m_id, fragment_shader_id);
         glDeleteShader(vertex_shader_id);
         glDeleteShader(fragment_shader_id);
     }
 
-    ShaderProgram::~ShaderProgram()
-    {
+    // Деструктор программы шейдера
+    ShaderProgram::~ShaderProgram(){
         glDeleteProgram(m_id);
     }
 
-    void ShaderProgram::bind() const
-    {
+    // Задание текущей программы шейдера
+    void ShaderProgram::bind() const{
         glUseProgram(m_id);
     }
 
-    void ShaderProgram::unbind()
-    {
+    // Снимаем текущую программу шейдера
+    void ShaderProgram::unbind(){
         glUseProgram(0);
     }
 
-    ShaderProgram& ShaderProgram::operator=(ShaderProgram&& shaderProgram)
-    {
+    // Оператор присваивания
+    ShaderProgram& ShaderProgram::operator=(ShaderProgram&& shaderProgram){
         glDeleteProgram(m_id);
         m_id = shaderProgram.m_id;
         m_isCompiled = shaderProgram.m_isCompiled;
@@ -100,8 +100,8 @@ namespace MyEngine
         return *this;
     }
 
-    ShaderProgram::ShaderProgram(ShaderProgram&& shaderProgram)
-    {
+    // Конструктор перемещения
+    ShaderProgram::ShaderProgram(ShaderProgram&& shaderProgram){
         m_id = shaderProgram.m_id;
         m_isCompiled = shaderProgram.m_isCompiled;
 

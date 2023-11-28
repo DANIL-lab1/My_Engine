@@ -3,6 +3,7 @@
 #include "MyEngineCore/Window.hpp"
 #include "MyEngineCore/Log.hpp"
 #include "MyEngineCore/Rendering/OpenGL/ShaderProgram.hpp"
+#include "MyEngineCore/Rendering/OpenGL/VertexBuffer.hpp"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -62,8 +63,11 @@ namespace MyEngine {
         "   frag_color = vec4(color, 1.0);"
         "}";
 
-    // Две переменные для шейдеров (хранения и обработки)
+    // Указатель на шейдерную программа и обработчик
     std::unique_ptr<ShaderProgram> p_shader_program;
+    // Указатели на вертексные буферы (позиция и цвет)
+    std::unique_ptr<VertexBuffer> p_points_vbo;
+    std::unique_ptr<VertexBuffer> p_colors_vbo;
     GLuint vao;
 
     // Конструктор и запуск игрового движка
@@ -105,8 +109,7 @@ namespace MyEngine {
 
         // Ошибка чтения данных
         m_pWindow = glfwCreateWindow(m_data.width, m_data.height, m_data.title.c_str(), nullptr, nullptr);
-        if (!m_pWindow)
-        {
+        if (!m_pWindow){
             LOG_CRITICAL("Can't create window {0} width size {1}x{2}!", m_data.title, m_data.width, m_data.height);
             glfwTerminate();
             return -2;
@@ -152,30 +155,19 @@ namespace MyEngine {
 
         // Задаём границы отрисовки экрана для треугольника
         glfwSetFramebufferSizeCallback(m_pWindow,
-            [](GLFWwindow* pWindow, int width, int height)
-            {
+            [](GLFWwindow* pWindow, int width, int height){
                 glViewport(0, 0, width, height);
             });
 
+        // Инициализация программы шейдеров с выбранными шейдерами
         p_shader_program = std::make_unique<ShaderProgram>(vertex_shader, fragment_shader);
-        if (!p_shader_program->isCompiled())
-        {
-            return false;
-        }
+        if (!p_shader_program->isCompiled()){ return false; }
 
         // Два массива памяти для видеокарты
 
-        // Создаём буфер для ингерации в него позиции шейдеров
-        GLuint points_vbo = 0;
-        glGenBuffers(1, &points_vbo);
-        glBindBuffer(GL_ARRAY_BUFFER, points_vbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(points), points, GL_STATIC_DRAW);
-
-        // Создаём буфер для ингерации в него цвета шейдеров
-        GLuint colors_vbo = 0;
-        glGenBuffers(1, &colors_vbo);
-        glBindBuffer(GL_ARRAY_BUFFER, colors_vbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(colors), colors, GL_STATIC_DRAW);
+        // Буферы для позиции и цвета
+        p_points_vbo = std::make_unique<VertexBuffer>(points, sizeof(points));
+        p_colors_vbo = std::make_unique<VertexBuffer>(colors, sizeof(colors));
 
         // Обработка значений
 
@@ -185,12 +177,12 @@ namespace MyEngine {
 
         // Обработка (связка) шейдера позиции
         glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, points_vbo);
+        p_points_vbo->bind();
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
         // Обработка (связка) шейдера цвета
         glEnableVertexAttribArray(1);
-        glBindBuffer(GL_ARRAY_BUFFER, colors_vbo);
+        p_colors_vbo->bind();
         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
         return 0;
@@ -209,6 +201,7 @@ namespace MyEngine {
         glClear(GL_COLOR_BUFFER_BIT);
 
         // Отрисовка треугольника (подключение программы шейдеров, подключаем vertex array object (обработка), сама отрисовка треуголника)
+        // Делаем шейдер текущим
         p_shader_program->bind();
         glBindVertexArray(vao);
         glDrawArrays(GL_TRIANGLES, 0, 3);
