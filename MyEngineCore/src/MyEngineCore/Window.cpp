@@ -33,6 +33,13 @@ namespace MyEngine {
         0.0f, 0.0f, 1.0f
     };
 
+    // Массив с позициями и цветом одновременно
+    GLfloat positions_colors[] = {
+        0.0f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,
+        0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 1.0f,
+       -0.5f, -0.5f, 0.0f,   1.0f, 0.0f, 1.0f
+    };
+
     // Вертексный шейдер (трасформация координат и вычисления связанные с ними) 
     const char* vertex_shader =
         // Версия шейдера
@@ -69,8 +76,12 @@ namespace MyEngine {
     // Указатели на вертексные буферы (позиция и цвет)
     std::unique_ptr<VertexBuffer> p_points_vbo;
     std::unique_ptr<VertexBuffer> p_colors_vbo;
-    // Указатель на вертексный буфер
-    std::unique_ptr<VertexArray> p_vao;
+    // Указатель на двойной вертексный буфер
+    std::unique_ptr<VertexArray> p_vao_2buffers;
+
+    // Указатель на двойной вертексный буфер и одиначный вертексный буфер
+    std::unique_ptr<VertexBuffer> p_positions_colors_vbo;
+    std::unique_ptr<VertexArray> p_vao_1buffer;
 
     // Конструктор и запуск игрового движка
 	Window::Window(std::string title, const unsigned int width, const unsigned int height)
@@ -168,15 +179,29 @@ namespace MyEngine {
         // Два массива памяти для видеокарты
 
         // Буферы для позиции и цвета
-        p_points_vbo = std::make_unique<VertexBuffer>(points, sizeof(points));
-        p_colors_vbo = std::make_unique<VertexBuffer>(colors, sizeof(colors));
-        p_vao = std::make_unique<VertexArray>();
+        BufferLayout buffer_layout_1vec3 {
+            ShaderDataType::Float3
+        };
+
+        p_vao_2buffers = std::make_unique<VertexArray>();
+        p_points_vbo = std::make_unique<VertexBuffer>(points, sizeof(points), buffer_layout_1vec3);
+        p_colors_vbo = std::make_unique<VertexBuffer>(colors, sizeof(colors), buffer_layout_1vec3);
+
+        p_vao_2buffers->add_buffer(*p_points_vbo);
+        p_vao_2buffers->add_buffer(*p_colors_vbo);
+
+        BufferLayout buffer_layout_2vec3 {
+            ShaderDataType::Float3,
+            ShaderDataType::Float3
+        };
 
         // Обработка значений
 
         // Добавляем буферы позиции и цвета в массив соответственно
-        p_vao->add_buffer(*p_points_vbo);
-        p_vao->add_buffer(*p_colors_vbo);
+        p_vao_1buffer = std::make_unique<VertexArray>();
+        p_positions_colors_vbo = std::make_unique<VertexBuffer>(positions_colors, sizeof(positions_colors), buffer_layout_2vec3);
+
+        p_vao_1buffer->add_buffer(*p_positions_colors_vbo);
         return 0;
 	}
 
@@ -192,12 +217,6 @@ namespace MyEngine {
         glClearColor(m_background_color[0], m_background_color[1], m_background_color[2], m_background_color[3]);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // Отрисовка треугольника (подключение программы шейдеров, подключаем vertex array object (обработка), сама отрисовка треуголника)
-        // Делаем шейдер текущим
-        p_shader_program->bind();
-        p_vao->bind();
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-
         // Задание размеров окна
         ImGuiIO& io = ImGui::GetIO();
         io.DisplaySize.x = static_cast<float>(get_width());
@@ -209,11 +228,24 @@ namespace MyEngine {
         ImGui::NewFrame();
 
         // Данные для окна
-        ImGui::ShowDemoWindow();
+        //ImGui::ShowDemoWindow();
 
         // Запуск работы приложения (инициализация, работа и закрытие)
         ImGui::Begin("Background Color Window");
         ImGui::ColorEdit4("Background Color", m_background_color);
+        static bool use_2_buffers = true;
+        // Выбор в зависимости от буфера
+        ImGui::Checkbox("2 Buffers", &use_2_buffers);
+        if (use_2_buffers) {
+            p_shader_program->bind();
+            p_vao_2buffers->bind();
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+        }
+        else {
+            p_shader_program->bind();
+            p_vao_1buffer->bind();
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+        }
         ImGui::End();
 
         // Отрисовка данных и рендер
