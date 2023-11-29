@@ -13,7 +13,6 @@ namespace MyEngine {
         case VertexBuffer::EUsage::Dynamic: return GL_DYNAMIC_DRAW;
         case VertexBuffer::EUsage::Stream:  return GL_STREAM_DRAW;
         }
-
         LOG_ERROR("Unknown VertexBuffer usage");
         return GL_STREAM_DRAW;
     }
@@ -43,12 +42,12 @@ namespace MyEngine {
         vertexBuffer.m_id = 0;
     }
 
-    // Задание текущего шейдера
+    // Задание текущего вертексного буфера
     void VertexBuffer::bind() const {
         glBindBuffer(GL_ARRAY_BUFFER, m_id);
     }
 
-    // Снимаем текущую шейдера
+    // Снимание текущую вертексного буфера
     void VertexBuffer::unbind(){
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }

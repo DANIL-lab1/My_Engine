@@ -22,12 +22,12 @@ namespace MyEngine {
         VertexBuffer& operator=(VertexBuffer&& vertexBuffer) noexcept;
         VertexBuffer(VertexBuffer&& vertexBuffer) noexcept;
 
-        // Установка шейдера (установка шейдера и убирание шейдера)
+        // Установка вертексного буфера (установка и убирание)
         void bind() const;
         static void unbind();
 
     private:
-        // id шейдера
+        // id вертексного буфера
         unsigned int m_id = 0;
     };
 
