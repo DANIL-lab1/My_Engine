@@ -93,7 +93,7 @@ namespace MyEngine {
         glDeleteBuffers(1, &m_id);
     }
 
-    // Перемещающий оператор
+    // Создание буфера
     VertexBuffer::VertexBuffer(const void* data, const size_t size, BufferLayout buffer_layout, const EUsage usage)
         : m_buffer_layout(std::move(buffer_layout))
     {
