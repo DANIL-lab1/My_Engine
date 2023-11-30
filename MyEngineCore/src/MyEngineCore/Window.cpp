@@ -16,6 +16,7 @@
 #include <imgui/backends/imgui_impl_glfw.h>
 
 #include <glm/glm/mat3x3.hpp>
+#include <glm/glm/trigonometric.hpp>
 
 namespace MyEngine {
 	
@@ -35,34 +36,35 @@ namespace MyEngine {
 
     // Вертексный шейдер (трасформация координат и вычисления связанные с ними) 
     const char* vertex_shader =
-        // Версия шейдера
-        "#version 460\n"
-        // Входные данные шейдера (позиция и цвет)
-        "layout(location = 0) in vec3 vertex_position;"
-        "layout(location = 1) in vec3 vertex_color;"
+        R"( // Версия шейдера
+        #version 460
+        // Входные данные шейдера (позиция и цвет, матрица скалирования)
+        layout(location = 0) in vec3 vertex_position;
+        layout(location = 1) in vec3 vertex_color;
+        uniform mat4 model_matrix; 
         // Выходные данные шейдера (векторы)
-        "out vec3 color;"
+        out vec3 color;
         // Функция для цвета
-        "void main() {"
+        void main() {
             // Задаём цвет вертекса
-        "   color = vertex_color;"
+            color = vertex_color;
             // Задаём позицию вертекса (4 параметр - перспектива)
-        "   gl_Position = vec4(vertex_position, 1.0);"
-        "}";
+           gl_Position = model_matrix * vec4(vertex_position, 1.0); 
+        })";
 
     // Фрагментный шейдер
     const char* fragment_shader =
-        // Версия шейдера
-        "#version 460\n"
+        R"(// Версия шейдера
+        #version 460
         // Входные данные (цвет)
-        "in vec3 color;"
+        in vec3 color;
         // Выходные данные (итоговый цвет)
-        "out vec4 frag_color;"
+        out vec4 frag_color;
         // Функция для задания цвета
-        "void main() {"
+        void main() {
             // Задаём цвет (4 параметр - прозрачность)
-        "   frag_color = vec4(color, 1.0);"
-        "}";
+           frag_color = vec4(color, 1.0);
+        })";
 
     // Указатель на шейдерную программа и обработчик
     std::unique_ptr<ShaderProgram> p_shader_program;
@@ -70,6 +72,10 @@ namespace MyEngine {
     std::unique_ptr<VertexBuffer> p_positions_colors_vbo;
     std::unique_ptr<IndexBuffer> p_index_buffer;
     std::unique_ptr<VertexArray> p_vao;
+    // Массивы для работы с матрицой смежности (сжатие/растяжение, вращение и перемещение) 
+    float scale[3] = { 1.f, 1.f, 1.f };
+    float rotate = 0.f;
+    float translate[3] = { 0.f, 0.f, 0.f };
 
     // Конструктор и запуск игрового движка
 	Window::Window(std::string title, const unsigned int width, const unsigned int height)
@@ -231,11 +237,37 @@ namespace MyEngine {
         // Данные для окна
         //ImGui::ShowDemoWindow();
 
-        // Запуск работы приложения (инициализация, работа и закрытие)
+        // Запуск работы приложения (инициализация, работа, добавляем функционал(растяжение/сжатие, вращение и перемещение) и закрытие)
         ImGui::Begin("Background Color Window");
         ImGui::ColorEdit4("Background Color", m_background_color);
+        ImGui::SliderFloat3("scale", scale, 0.f, 2.f);
+        ImGui::SliderFloat("rotate", &rotate, 0.f, 360.f);
+        ImGui::SliderFloat3("translate", translate, -1.f, 1.f);
         // Подключаем с помощью двойного массива
         p_shader_program->bind();
+
+        // Матрица скарирования
+        glm::mat4 scale_matrix(scale[0], 0, 0, 0,
+            0, scale[1], 0, 0,
+            0, 0, scale[2], 0,
+            0, 0, 0, 1);
+
+        // Матрица вращения
+        float rotate_in_radians = glm::radians(rotate);
+        glm::mat4 rotate_matrix(cos(rotate_in_radians), sin(rotate_in_radians), 0, 0,
+            -sin(rotate_in_radians), cos(rotate_in_radians), 0, 0,
+            0, 0, 1, 0,
+            0, 0, 0, 1);
+
+        // Матрица перемещение
+        glm::mat4 translate_matrix(1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0,
+            translate[0], translate[1], translate[2], 1);
+
+        glm::mat4 model_matrix = translate_matrix * rotate_matrix * scale_matrix;
+        p_shader_program->setMatrix4("model_matrix", model_matrix);
+
         p_vao->bind();
         glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(p_vao->get_indices_count()), GL_UNSIGNED_INT, nullptr);
         ImGui::End();

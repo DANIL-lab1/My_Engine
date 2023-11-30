@@ -1,5 +1,6 @@
 #pragma once
 
+#include <glm/glm/mat4x4.hpp>
 namespace MyEngine {
 
     class ShaderProgram
@@ -16,10 +17,11 @@ namespace MyEngine {
         ShaderProgram(const ShaderProgram&) = delete;
         ShaderProgram& operator=(const ShaderProgram&) = delete;
 
-        // ”становка шейдера (установка шейдера и убирание шейдера)
+        // ”становка шейдера (установка шейдера и убирание шейдера, установка матрицы)
         void bind() const;
         static void unbind();
         bool isCompiled() const { return m_isCompiled; }
+        void setMatrix4(const char* name, const glm::mat4& matrix) const;
 
     private:
         // ѕеременные (удачна€ компил€ци€ и id шейдера)
