@@ -6,6 +6,7 @@
 #include "MyEngineCore/Rendering/OpenGL/VertexBuffer.hpp"
 #include "MyEngineCore/Rendering/OpenGL/VertexArray.hpp"
 #include "MyEngineCore/Rendering/OpenGL/IndexBuffer.hpp"
+#include "MyEngineCore/Camera.hpp"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -38,10 +39,11 @@ namespace MyEngine {
     const char* vertex_shader =
         R"( // Версия шейдера
         #version 460
-        // Входные данные шейдера (позиция и цвет, матрица скалирования)
+        // Входные данные шейдера (позиция и цвет, матрица модели и матрица проекции)
         layout(location = 0) in vec3 vertex_position;
         layout(location = 1) in vec3 vertex_color;
-        uniform mat4 model_matrix; 
+        uniform mat4 model_matrix;
+        uniform mat4 view_projection_matrix; 
         // Выходные данные шейдера (векторы)
         out vec3 color;
         // Функция для цвета
@@ -49,7 +51,7 @@ namespace MyEngine {
             // Задаём цвет вертекса
             color = vertex_color;
             // Задаём позицию вертекса (4 параметр - перспектива)
-           gl_Position = model_matrix * vec4(vertex_position, 1.0); 
+           gl_Position = view_projection_matrix * model_matrix * vec4(vertex_position, 1.0); 
         })";
 
     // Фрагментный шейдер
@@ -76,6 +78,11 @@ namespace MyEngine {
     float scale[3] = { 1.f, 1.f, 1.f };
     float rotate = 0.f;
     float translate[3] = { 0.f, 0.f, 0.f };
+
+    float camera_position[3] = { 0.f, 0.f, 1.f };
+    float camera_rotation[3] = { 0.f, 0.f, 0.f };
+    bool perspective_camera = false;
+    Camera camera;
 
     // Конструктор и запуск игрового движка
 	Window::Window(std::string title, const unsigned int width, const unsigned int height)
@@ -237,12 +244,20 @@ namespace MyEngine {
         // Данные для окна
         //ImGui::ShowDemoWindow();
 
-        // Запуск работы приложения (инициализация, работа, добавляем функционал(растяжение/сжатие, вращение и перемещение) и закрытие)
+        // Запуск работы приложения (инициализация, работа и закрытие)
         ImGui::Begin("Background Color Window");
         ImGui::ColorEdit4("Background Color", m_background_color);
+        
+        // Задаём растяжение/сжатие, вращение и перемещение для объекта
         ImGui::SliderFloat3("scale", scale, 0.f, 2.f);
         ImGui::SliderFloat("rotate", &rotate, 0.f, 360.f);
         ImGui::SliderFloat3("translate", translate, -1.f, 1.f);
+
+        // Задаём позицию, вращение и перспективу для камеры
+        ImGui::SliderFloat3("camera position", camera_position, -10.f, 10.f);
+        ImGui::SliderFloat3("camera rotation", camera_rotation, 0, 360.f);
+        ImGui::Checkbox("Perspective camera", &perspective_camera);
+        
         // Подключаем с помощью двойного массива
         p_shader_program->bind();
 
@@ -267,6 +282,12 @@ namespace MyEngine {
 
         glm::mat4 model_matrix = translate_matrix * rotate_matrix * scale_matrix;
         p_shader_program->setMatrix4("model_matrix", model_matrix);
+
+        // Задаём камеру в пространстве
+        camera.set_position_rotation(glm::vec3(camera_position[0], camera_position[1], camera_position[2]),
+            glm::vec3(camera_rotation[0], camera_rotation[1], camera_rotation[2]));
+        camera.set_projection_mode(perspective_camera ? Camera::ProjectionMode::Perspective : Camera::ProjectionMode::Orthographic);
+        p_shader_program->setMatrix4("view_projection_matrix", camera.get_projection_matrix() * camera.get_view_matrix());
 
         p_vao->bind();
         glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(p_vao->get_indices_count()), GL_UNSIGNED_INT, nullptr);

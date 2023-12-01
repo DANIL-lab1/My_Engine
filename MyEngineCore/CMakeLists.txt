@@ -6,6 +6,7 @@ set(ENGINE_PUBLIC_INCLUDES
 	includes/MyEngineCore/Application.hpp
 	includes/MyEngineCore/Log.hpp
 	includes/MyEngineCore/Event.hpp
+	includes/MyEngineCore/Camera.hpp
 )
 
 set(ENGINE_PRIVATE_INCLUDES
@@ -19,6 +20,7 @@ set(ENGINE_PRIVATE_INCLUDES
 set(ENGINE_PRIVATE_SOURCES
 	src/MyEngineCore/Application.cpp
 	src/MyEngineCore/Window.cpp
+	src/MyEngineCore/Camera.cpp
 	src/MyEngineCore/Rendering/OpenGL/ShaderProgram.cpp
 	src/MyEngineCore/Rendering/OpenGL/VertexBuffer.cpp
 	src/MyEngineCore/Rendering/OpenGL/VertexArray.cpp
