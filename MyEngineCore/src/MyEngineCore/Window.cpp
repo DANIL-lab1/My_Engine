@@ -8,7 +8,7 @@
 #include "MyEngineCore/Rendering/OpenGL/IndexBuffer.hpp"
 #include "MyEngineCore/Camera.hpp"
 
-#include <glad/glad.h>
+#include "MyEngineCore/Rendering/OpenGL/Render_OpenGL.hpp"
 #include <GLFW/glfw3.h>
 
 #include <imgui/imgui.h>
@@ -20,9 +20,6 @@
 #include <glm/glm/trigonometric.hpp>
 
 namespace MyEngine {
-	
-    // Переменная инициализация
-    static bool s_GLFW_initialized = false;
 
     // Массив с позициями и цветом одновременно
     GLfloat positions_colors2[] = {
@@ -111,29 +108,28 @@ namespace MyEngine {
 
         // Далее идут мини-обработка ошибок
 
-        // Ошибка инициализации
-        if (!s_GLFW_initialized) {
-            if (!glfwInit()) {
-                LOG_CRITICAL("Can't initialize GLFW!");
-                return -1;
-            }
-            s_GLFW_initialized = true;
+        // Ошибка вызова рендера
+        glfwSetErrorCallback([](int error_code, const char* description) {
+            LOG_CRITICAL("GLFW error: {0}", description);
+            });
+
+        if (!glfwInit())
+        {
+            LOG_CRITICAL("Can't initialize GLFW!");
+            return -1;
         }
 
         // Ошибка чтения данных
         m_pWindow = glfwCreateWindow(m_data.width, m_data.height, m_data.title.c_str(), nullptr, nullptr);
         if (!m_pWindow){
             LOG_CRITICAL("Can't create window {0} width size {1}x{2}!", m_data.title, m_data.width, m_data.height);
-            glfwTerminate();
             return -2;
         }
 
-        // Контекст окна
-        glfwMakeContextCurrent(m_pWindow);
-
-        // Ошибка библиотеки GLAD
-        if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-            LOG_CRITICAL("Failed to initialize GLAD");
+        // Ошибка инициализации рендера
+        if (!Render_OpenGL::init(m_pWindow))
+        {
+            LOG_CRITICAL("Failed to initialize OpenGL renderer");
             return -3;
         }
 
@@ -169,7 +165,7 @@ namespace MyEngine {
         // Задаём границы отрисовки экрана для треугольника
         glfwSetFramebufferSizeCallback(m_pWindow,
             [](GLFWwindow* pWindow, int width, int height){
-                glViewport(0, 0, width, height);
+                Render_OpenGL::set_viewport(width, height);
             });
 
         // Инициализация программы шейдеров с выбранными шейдерами
@@ -198,38 +194,23 @@ namespace MyEngine {
         p_vao->add_vertex_buffer(*p_positions_colors_vbo);
         p_vao->set_index_buffer(*p_index_buffer);
 
-        glm::mat3 mat_1(4, 0, 0, 2, 8, 1, 0, 1, 0);
-        glm::mat3 mat_2(4, 2, 9, 2, 0, 4, 1, 4, 2);
-
-        glm::mat3 result_mat = mat_1 * mat_2;
-
-        LOG_INFO("");
-        LOG_INFO("|{0:3} {1:3} {2:3}|", result_mat[0][0], result_mat[1][0], result_mat[2][0]);
-        LOG_INFO("|{0:3} {1:3} {2:3}|", result_mat[0][1], result_mat[1][1], result_mat[2][1]);
-        LOG_INFO("|{0:3} {1:3} {2:3}|", result_mat[0][2], result_mat[1][2], result_mat[2][2]);
-        LOG_INFO("");
-
-        glm::vec4 vec(1, 2, 3, 4);
-        glm::mat4 mat_identity(1);
-
-        glm::vec4 result_vec = mat_identity * vec;
-
-        LOG_INFO("({0} {1} {2} {3})", result_vec.x, result_vec.y, result_vec.z, result_vec.w);
-
         return 0;
 	}
 
     // Функция закрытия игрового движка
     void Window::shutdown() {
+        if (ImGui::GetCurrentContext()) {
+            ImGui::DestroyContext();
+        }
         glfwDestroyWindow(m_pWindow);
         glfwTerminate();
     }
 
     // Функция обновления игрового движка
     void Window::on_update() {
-        // Делаем выборку цвета фона динамичной
-        glClearColor(m_background_color[0], m_background_color[1], m_background_color[2], m_background_color[3]);
-        glClear(GL_COLOR_BUFFER_BIT);
+        // Установка цвета рендера и очистка
+        Render_OpenGL::set_clear_color(m_background_color[0], m_background_color[1], m_background_color[2], m_background_color[3]);
+        Render_OpenGL::clear();
 
         // Задание размеров окна
         ImGuiIO& io = ImGui::GetIO();
@@ -289,8 +270,8 @@ namespace MyEngine {
         camera.set_projection_mode(perspective_camera ? Camera::ProjectionMode::Perspective : Camera::ProjectionMode::Orthographic);
         p_shader_program->setMatrix4("view_projection_matrix", camera.get_projection_matrix() * camera.get_view_matrix());
 
-        p_vao->bind();
-        glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(p_vao->get_indices_count()), GL_UNSIGNED_INT, nullptr);
+        // Отрисовка рнедера
+        Render_OpenGL::draw(*p_vao);
         ImGui::End();
         // Отрисовка данных и рендер
         ImGui::Render();

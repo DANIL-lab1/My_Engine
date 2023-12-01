@@ -11,6 +11,7 @@ set(ENGINE_PUBLIC_INCLUDES
 
 set(ENGINE_PRIVATE_INCLUDES
 	src/MyEngineCore/Window.hpp
+	src/MyEngineCore/Rendering/OpenGL/Render_OpenGL.hpp
 	src/MyEngineCore/Rendering/OpenGL/ShaderProgram.hpp
 	src/MyEngineCore/Rendering/OpenGL/VertexBuffer.hpp
 	src/MyEngineCore/Rendering/OpenGL/VertexArray.hpp
@@ -21,6 +22,7 @@ set(ENGINE_PRIVATE_SOURCES
 	src/MyEngineCore/Application.cpp
 	src/MyEngineCore/Window.cpp
 	src/MyEngineCore/Camera.cpp
+	src/MyEngineCore/Rendering/OpenGL/Render_OpenGL.cpp
 	src/MyEngineCore/Rendering/OpenGL/ShaderProgram.cpp
 	src/MyEngineCore/Rendering/OpenGL/VertexBuffer.cpp
 	src/MyEngineCore/Rendering/OpenGL/VertexArray.cpp
