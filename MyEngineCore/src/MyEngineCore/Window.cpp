@@ -7,6 +7,7 @@
 #include "MyEngineCore/Rendering/OpenGL/VertexArray.hpp"
 #include "MyEngineCore/Rendering/OpenGL/IndexBuffer.hpp"
 #include "MyEngineCore/Camera.hpp"
+#include "MyEngineCore/Modules/UIModule.hpp"
 
 #include "MyEngineCore/Rendering/OpenGL/Render_OpenGL.hpp"
 #include <GLFW/glfw3.h>
@@ -85,14 +86,6 @@ namespace MyEngine {
 	Window::Window(std::string title, const unsigned int width, const unsigned int height)
         : m_data({ std::move(title), width, height }) {
 		int resultCode = init();
-        // Проверка версии 
-        IMGUI_CHECKVERSION();
-        // Создание контекстка
-        ImGui::CreateContext();
-        // Инициализация openGL
-        ImGui_ImplOpenGL3_Init();
-        // Подключаем OpenGL для редактирования
-        ImGui_ImplGlfw_InitForOpenGL(m_pWindow, true);
 	}
 
     // Деструктор и закрытие игрового движка
@@ -168,6 +161,9 @@ namespace MyEngine {
                 Render_OpenGL::set_viewport(width, height);
             });
 
+        // При создании окна
+        UIModule::on_window_create(m_pWindow);
+
         // Инициализация программы шейдеров с выбранными шейдерами
         p_shader_program = std::make_unique<ShaderProgram>(vertex_shader, fragment_shader);
         if (!p_shader_program->isCompiled()){ return false; }
@@ -199,9 +195,8 @@ namespace MyEngine {
 
     // Функция закрытия игрового движка
     void Window::shutdown() {
-        if (ImGui::GetCurrentContext()) {
-            ImGui::DestroyContext();
-        }
+        // При закрытии окна
+        UIModule::on_window_close();
         glfwDestroyWindow(m_pWindow);
         glfwTerminate();
     }
@@ -211,33 +206,6 @@ namespace MyEngine {
         // Установка цвета рендера и очистка
         Render_OpenGL::set_clear_color(m_background_color[0], m_background_color[1], m_background_color[2], m_background_color[3]);
         Render_OpenGL::clear();
-
-        // Задание размеров окна
-        ImGuiIO& io = ImGui::GetIO();
-        io.DisplaySize.x = static_cast<float>(get_width());
-        io.DisplaySize.y = static_cast<float>(get_height());
-
-        // Создание фрейма для рисования
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-
-        // Данные для окна
-        //ImGui::ShowDemoWindow();
-
-        // Запуск работы приложения (инициализация, работа и закрытие)
-        ImGui::Begin("Background Color Window");
-        ImGui::ColorEdit4("Background Color", m_background_color);
-        
-        // Задаём растяжение/сжатие, вращение и перемещение для объекта
-        ImGui::SliderFloat3("scale", scale, 0.f, 2.f);
-        ImGui::SliderFloat("rotate", &rotate, 0.f, 360.f);
-        ImGui::SliderFloat3("translate", translate, -1.f, 1.f);
-
-        // Задаём позицию, вращение и перспективу для камеры
-        ImGui::SliderFloat3("camera position", camera_position, -10.f, 10.f);
-        ImGui::SliderFloat3("camera rotation", camera_rotation, 0, 360.f);
-        ImGui::Checkbox("Perspective camera", &perspective_camera);
         
         // Подключаем с помощью двойного массива
         p_shader_program->bind();
@@ -272,10 +240,33 @@ namespace MyEngine {
 
         // Отрисовка рнедера
         Render_OpenGL::draw(*p_vao);
+
+        // При отрисовки окна
+        UIModule::on_ui_draw_begin();
+        bool show = true;
+        UIModule::ShowExampleAppDockSpace(&show);
+
+        // Данные для окна
+        ImGui::ShowDemoWindow();
+
+        // Запуск работы приложения (инициализация, работа и закрытие)
+        ImGui::Begin("Background Color Window");
+        ImGui::ColorEdit4("Background Color", m_background_color);
+
+        // Задаём растяжение/сжатие, вращение и перемещение для объекта
+        ImGui::SliderFloat3("scale", scale, 0.f, 2.f);
+        ImGui::SliderFloat("rotate", &rotate, 0.f, 360.f);
+        ImGui::SliderFloat3("translate", translate, -1.f, 1.f);
+
+        // Задаём позицию, вращение и перспективу для камеры
+        ImGui::SliderFloat3("camera position", camera_position, -10.f, 10.f);
+        ImGui::SliderFloat3("camera rotation", camera_rotation, 0, 360.f);
+        ImGui::Checkbox("Perspective camera", &perspective_camera);
+
         ImGui::End();
-        // Отрисовка данных и рендер
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        // При конце отрисовки
+        UIModule::on_ui_draw_end();
 
         glfwSwapBuffers(m_pWindow);
         glfwPollEvents();
