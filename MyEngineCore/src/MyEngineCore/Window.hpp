@@ -51,8 +51,6 @@ namespace MyEngine {
 		// ”казатель на окно и им€ структуры
 		GLFWwindow* m_pWindow = nullptr;
 		WindowData m_data;
-		// —оздаЄм переменную дл€ отрисовки заднего фона
-		float m_background_color[4] = { 0.33f, 0.33f, 0.33f, 0.f };
 	};
 
 }

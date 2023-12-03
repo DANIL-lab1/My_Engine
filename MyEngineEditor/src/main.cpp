@@ -3,12 +3,23 @@
 #include <iostream>
 #include <memory>
 #include "MyEngineCore/Application.hpp"
+#include <imgui/imgui.h>
 
 using namespace std;
 
-class MyApp :public MyEngine::Application {
+class MyEngineEditor :public MyEngine::Application {
 	virtual void on_update() override {
 		//cout << "Update frame: " << frame++ << endl;
+	}
+
+	// Начальная отрисовка
+	virtual void on_ui_draw() override
+	{
+		ImGui::Begin("Editor");
+		ImGui::SliderFloat3("camera position", camera_position, -10.f, 10.f);
+		ImGui::SliderFloat3("camera rotation", camera_rotation, 0, 360.f);
+		ImGui::Checkbox("Perspective camera", &perspective_camera);
+		ImGui::End();
 	}
 
 	int frame = 0;
@@ -17,12 +28,12 @@ class MyApp :public MyEngine::Application {
 int main() {
 	
 	// Создание приложения
-	auto myApp = make_unique<MyApp>();
+	auto p_MyEngineEditor = make_unique<MyEngineEditor>();
 
 	// Изначальные настройки приложения
-	int returnCode = myApp->start(1024, 768, "My first App");
+	int returnCode = p_MyEngineEditor ->start(1024, 768, "My Engine Editor");
 
-	cin.get();
+	//cin.get();
 
 	return returnCode;
 }
