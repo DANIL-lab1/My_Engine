@@ -2,6 +2,8 @@
 
 #include <iostream>
 #include <memory>
+
+#include <MyEngineCore/Input.hpp>
 #include "MyEngineCore/Application.hpp"
 #include <imgui/imgui.h>
 
@@ -10,6 +12,37 @@ using namespace std;
 class MyEngineEditor :public MyEngine::Application {
 	virtual void on_update() override {
 		//cout << "Update frame: " << frame++ << endl;
+        // Передвижение камеры (влево, вверх, вправо и вниз)
+        if (MyEngine::Input::IsKeyPressed(MyEngine::KeyCode::KEY_W)){
+            camera_position[2] -= 0.01f;
+        }
+        if (MyEngine::Input::IsKeyPressed(MyEngine::KeyCode::KEY_S)){
+            camera_position[2] += 0.01f;
+        }
+        if (MyEngine::Input::IsKeyPressed(MyEngine::KeyCode::KEY_A)){
+            camera_position[0] -= 0.01f;
+        }
+        if (MyEngine::Input::IsKeyPressed(MyEngine::KeyCode::KEY_D)){
+            camera_position[0] += 0.01f;
+        }
+        if (MyEngine::Input::IsKeyPressed(MyEngine::KeyCode::KEY_E)){
+            camera_position[1] += 0.01f;
+        }
+        if (MyEngine::Input::IsKeyPressed(MyEngine::KeyCode::KEY_Q)){
+            camera_position[1] -= 0.01f;
+        }
+        if (MyEngine::Input::IsKeyPressed(MyEngine::KeyCode::KEY_UP)){
+            camera_rotation[0] += 0.5f;
+        }
+        if (MyEngine::Input::IsKeyPressed(MyEngine::KeyCode::KEY_DOWN)){
+            camera_rotation[0] -= 0.5f;
+        }
+        if (MyEngine::Input::IsKeyPressed(MyEngine::KeyCode::KEY_RIGHT)){
+            camera_rotation[1] -= 0.5f;
+        }
+        if (MyEngine::Input::IsKeyPressed(MyEngine::KeyCode::KEY_LEFT)){
+            camera_rotation[1] += 0.5f;
+        }
 	}
 
 	// Начальная отрисовка

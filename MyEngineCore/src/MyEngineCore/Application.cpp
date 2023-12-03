@@ -1,6 +1,8 @@
 #include "MyEngineCore/Application.hpp"
 #include "MyEngineCore/Log.hpp"
 #include "MyEngineCore/Window.hpp"
+#include "MyEngineCore/Event.hpp"
+#include "MyEngineCore/Input.hpp"
 
 #include "MyEngineCore/Rendering/OpenGL/ShaderProgram.hpp"
 #include "MyEngineCore/Rendering/OpenGL/VertexBuffer.hpp"
@@ -110,11 +112,36 @@ namespace MyEngine {
                 m_bCloseWindow = true;
             });
 
+        // Обработка события нажатия клавиши
+        m_event_dispatcher.add_event_listener<EventKeyPressed>([&](EventKeyPressed& event) {
+            // Тип char ограничен, поэтому обрабатываем только до символа "z"
+            if (event.key_code <= KeyCode::KEY_Z) {
+                // Проверка, зажата ли клавиша или только нажата
+                if (event.repeated) {
+                    LOG_INFO("[Key pressed: {0}, repeated", static_cast<char>(event.key_code));
+                }
+                else {
+                    LOG_INFO("[Key pressed: {0}", static_cast<char>(event.key_code));
+                }
+            }
+            Input::PressKey(event.key_code);
+        });
+
+        // Обработка событий отпускания клавиши
+        m_event_dispatcher.add_event_listener<EventKeyReleased>([&](EventKeyReleased& event) {
+            // Тип char ограничен, поэтому обрабатываем только до символа "z"
+            if (event.key_code <= KeyCode::KEY_Z){
+                LOG_INFO("[Key released: {0}", static_cast<char>(event.key_code));
+            }
+            Input::ReleaseKey(event.key_code);
+        });
+
         // Вызов обработчиков функции
         m_pWindow->set_event_callback(
             [&](BaseEvent& event){
                 m_event_dispatcher.dispatch(event);
             });
+
 
 
         // Работа с шейдерной программой

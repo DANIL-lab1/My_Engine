@@ -33,7 +33,7 @@ namespace MyEngine {
 		// Параметры для камеры и камера сама по себе
 		float camera_position[3] = { 0.f, 0.f, 1.f };
 		float camera_rotation[3] = { 0.f, 0.f, 0.f };
-		bool perspective_camera = false;
+		bool perspective_camera = true;
 		Camera camera;
 
 	private:

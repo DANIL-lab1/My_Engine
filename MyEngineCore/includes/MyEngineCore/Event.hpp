@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "Keys.hpp"
+
 #include <functional>
 #include <array>
 
@@ -111,4 +113,40 @@ namespace MyEngine {
 		// Тип события
 		static const EventType type = EventType::WindowClose;
 	};
+
+	// Структура для обработки нажатия клавиш
+	struct EventKeyPressed : public BaseEvent {
+		// Конструктор для события нажатия клавиш
+		EventKeyPressed(const KeyCode key_code, const bool repeated) : key_code(key_code), repeated(repeated) {}
+
+		// Возвращение типа события
+		virtual EventType get_type() const override {
+			return type;
+		}
+
+		// Код клавиши и было ли зажатие
+		KeyCode key_code;
+		bool repeated;
+
+		// Тип события
+		static const EventType type = EventType::KeyPressed;
+	};
+
+	// Структура для обработки зажатия клавиш
+	struct EventKeyReleased : public BaseEvent {
+		// Конструктор для события нажатия клавиш
+		EventKeyReleased(const KeyCode key_code) : key_code(key_code) {}
+
+		// Возвращение типа события
+		virtual EventType get_type() const override {
+			return type;
+		}
+
+		// Код клавиши
+		KeyCode key_code;
+
+		// Тип события
+		static const EventType type = EventType::KeyReleased;
+	};
+
 }
