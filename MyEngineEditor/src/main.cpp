@@ -9,66 +9,78 @@
 
 using namespace std;
 
-class MyEngineEditor :public MyEngine::Application {
-	virtual void on_update() override {
-        // Смещена ли камера и векторы перемещения
-        bool move_camera = false;
+class MyEngineEditor : public MyEngine::Application {
+
+    // Координаты мышки x и y
+    double m_initial_mouse_pos_x = 0.0;
+    double m_initial_mouse_pos_y = 0.0;
+    
+    virtual void on_update() override {
+        // Векторы перемещения
         glm::vec3 movement_delta{ 0, 0, 0 };
         glm::vec3 rotation_delta{ 0, 0, 0 };
 		//cout << "Update frame: " << frame++ << endl;
         // Передвижение камеры (влево, вверх, вправо и вниз)
         if (MyEngine::Input::IsKeyPressed(MyEngine::KeyCode::KEY_W)){
             movement_delta.x += 0.05f;
-            move_camera = true;
         }
         if (MyEngine::Input::IsKeyPressed(MyEngine::KeyCode::KEY_S)){
             movement_delta.x -= 0.05f;
-            move_camera = true;
         }
         if (MyEngine::Input::IsKeyPressed(MyEngine::KeyCode::KEY_A)){
             movement_delta.y -= 0.05f;
-            move_camera = true;
         }
         if (MyEngine::Input::IsKeyPressed(MyEngine::KeyCode::KEY_D)){
             movement_delta.y += 0.05f;
-            move_camera = true;
         }
         if (MyEngine::Input::IsKeyPressed(MyEngine::KeyCode::KEY_E)){
             movement_delta.z += 0.05f;
-            move_camera = true;
         }
         if (MyEngine::Input::IsKeyPressed(MyEngine::KeyCode::KEY_Q)){
             movement_delta.z -= 0.05f;
-            move_camera = true;
         }
         if (MyEngine::Input::IsKeyPressed(MyEngine::KeyCode::KEY_UP)){
             rotation_delta.y -= 0.5f;
-            move_camera = true;
         }
         if (MyEngine::Input::IsKeyPressed(MyEngine::KeyCode::KEY_DOWN)){
             rotation_delta.y += 0.5f;
-            move_camera = true;
         }
         if (MyEngine::Input::IsKeyPressed(MyEngine::KeyCode::KEY_RIGHT)){
             rotation_delta.z -= 0.5f;
-            move_camera = true;
         }
         if (MyEngine::Input::IsKeyPressed(MyEngine::KeyCode::KEY_LEFT)){
             rotation_delta.z += 0.5f;
-            move_camera = true;
         }
         if (MyEngine::Input::IsKeyPressed(MyEngine::KeyCode::KEY_P)){
             rotation_delta.x += 0.5f;
-            move_camera = true;
         }
         if (MyEngine::Input::IsKeyPressed(MyEngine::KeyCode::KEY_O)){
             rotation_delta.x -= 0.5f;
-            move_camera = true;
         }
-        if (move_camera){
-            camera.add_movement_and_rotatition(movement_delta, rotation_delta);
+        if (MyEngine::Input::IsMouseButtonPressed(MyEngine::MouseButton::MOUSE_BUTTON_RIGHT)){
+            glm::vec2 current_cursor_position = get_current_cursor_position();
+            if (MyEngine::Input::IsMouseButtonPressed(MyEngine::MouseButton::MOUSE_BUTTON_LEFT)){
+                camera.move_right(static_cast<float>(current_cursor_position.x - m_initial_mouse_pos_x) / 100.f);
+                camera.move_up(static_cast<float>(m_initial_mouse_pos_y - current_cursor_position.y) / 100.f);
+            }
+            else {
+                rotation_delta.z += static_cast<float>(m_initial_mouse_pos_x - current_cursor_position.x) / 5.f;
+                rotation_delta.y -= static_cast<float>(m_initial_mouse_pos_y - current_cursor_position.y) / 5.f;
+            }
+            m_initial_mouse_pos_x = current_cursor_position.x;
+            m_initial_mouse_pos_y = current_cursor_position.y;
         }
-	}
+        camera.add_movement_and_rotation(movement_delta, rotation_delta);
+    }
+
+    // При нажатии мышки
+    virtual void on_mouse_button_event(const MyEngine::MouseButton button_code,
+        const double x_pos,
+        const double y_pos,
+        const bool pressed) override {
+        m_initial_mouse_pos_x = x_pos;
+        m_initial_mouse_pos_y = y_pos;
+    }
 
 	// Начальная отрисовка
 	virtual void on_ui_draw() override {

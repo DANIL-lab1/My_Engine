@@ -63,6 +63,7 @@ namespace MyEngine {
 
         // Обработка клавиш с клавиатуры
         glfwSetKeyCallback(m_pWindow, [](GLFWwindow* pWindow, int key, int scancode, int action, int mods) {
+                // Окно
                 WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(pWindow));
                 // Обработка событий (нажатие, зажатие и отпускание клавиш)
                 switch (action) {
@@ -78,6 +79,28 @@ namespace MyEngine {
                 }
                 case GLFW_REPEAT: {
                     EventKeyPressed event(static_cast<KeyCode>(key), true);
+                    data.eventCallbackFn(event);
+                    break;
+                }
+                }
+            });
+
+        // Обработка мышки
+        glfwSetMouseButtonCallback(m_pWindow, [](GLFWwindow* pWindow, int button, int action, int mods){
+                // Окно, координаты и их получение
+                WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(pWindow));
+                double x_pos;
+                double y_pos;
+                glfwGetCursorPos(pWindow, &x_pos, &y_pos);
+                // Обработка событий (нажатие и отпускание)
+                switch (action){
+                case GLFW_PRESS: {
+                    EventMouseButtonPressed event(static_cast<MouseButton>(button), x_pos, y_pos);
+                    data.eventCallbackFn(event);
+                    break;
+                }
+                case GLFW_RELEASE: {
+                    EventMouseButtonReleased event(static_cast<MouseButton>(button), x_pos, y_pos);
                     data.eventCallbackFn(event);
                     break;
                 }
@@ -135,6 +158,14 @@ namespace MyEngine {
     void Window::on_update() {
         glfwSwapBuffers(m_pWindow);
         glfwPollEvents();
+    }
+
+    // Функция для получения координат мышки
+    glm::vec2 Window::get_current_cursor_position() const {
+        double x_pos;
+        double y_pos;
+        glfwGetCursorPos(m_pWindow, &x_pos, &y_pos);
+        return { x_pos, y_pos };
     }
 
 }

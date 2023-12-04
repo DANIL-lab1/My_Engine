@@ -112,6 +112,20 @@ namespace MyEngine {
                 m_bCloseWindow = true;
             });
 
+        // Обработка события нажатия мышки
+        m_event_dispatcher.add_event_listener<EventMouseButtonPressed>([&](EventMouseButtonPressed& event){
+                LOG_INFO("[Mouse button pressed: {0}, at ({1}, {2})", static_cast<int>(event.mouse_button), event.x_pos, event.y_pos);
+                Input::PressMouseButton(event.mouse_button);
+                on_mouse_button_event(event.mouse_button, event.x_pos, event.y_pos, true);
+            });
+
+        // Обработка события нажатия мышки
+        m_event_dispatcher.add_event_listener<EventMouseButtonReleased>([&](EventMouseButtonReleased& event){
+                LOG_INFO("[Mouse button released: {0}, at ({1}, {2})", static_cast<int>(event.mouse_button), event.x_pos, event.y_pos);
+                Input::ReleaseMouseButton(event.mouse_button);
+                on_mouse_button_event(event.mouse_button, event.x_pos, event.y_pos, false);
+            });
+
         // Обработка события нажатия клавиши
         m_event_dispatcher.add_event_listener<EventKeyPressed>([&](EventKeyPressed& event) {
             // Тип char ограничен, поэтому обрабатываем только до символа "z"
@@ -252,5 +266,10 @@ namespace MyEngine {
 
         return 0;
 	}
+
+    // Получения позиции курсора
+    glm::vec2 Application::get_current_cursor_position() const {
+        return m_pWindow->get_current_cursor_position();
+    }
 
 }

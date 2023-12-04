@@ -149,4 +149,43 @@ namespace MyEngine {
 		static const EventType type = EventType::KeyReleased;
 	};
 
+	// Структура для обработки нажатия мышки
+	struct EventMouseButtonPressed : public BaseEvent {
+		// Конструктор для события нажатия мышки
+		EventMouseButtonPressed(const MouseButton mouse_button, const double x_pos, const double y_pos)
+			: mouse_button(mouse_button), x_pos(x_pos), y_pos(y_pos) {}
+
+		// Возвращение типа события
+		virtual EventType get_type() const override {
+			return type;
+		}
+
+		// Код клавиши и позиция по x и y
+		MouseButton mouse_button;
+		double x_pos;
+		double y_pos;
+
+		// Тип события
+		static const EventType type = EventType::MouseButtonPressed;
+	};
+
+	// Структура для обработки отпускания мышки
+	struct EventMouseButtonReleased : public BaseEvent {
+		// Структура для обработки отпускания мышки
+		EventMouseButtonReleased(const MouseButton mouse_button, const double x_pos, const double y_pos)
+			: mouse_button(mouse_button), x_pos(x_pos), y_pos(y_pos) {}
+
+		// Возвращение типа события
+		virtual EventType get_type() const override {
+			return type;
+		}
+
+		// Код клавиши и позиция по x и y
+		MouseButton mouse_button;
+		double x_pos;
+		double y_pos;
+
+		// Тип события
+		static const EventType type = EventType::MouseButtonReleased;
+	};
 }
