@@ -23,10 +23,10 @@ namespace MyEngine {
 
     // Массив с позициями и цветом одновременно
     GLfloat positions_colors2[] = {
-       -0.5f, -0.5f, 0.0f,   1.0f, 1.0f, 0.0f,
-        0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 1.0f,
-       -0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 1.0f,
-        0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f
+        0.0f, -0.5f, -0.5f,   1.0f, 1.0f, 0.0f,
+        0.0f,  0.5f, -0.5f,   0.0f, 1.0f, 1.0f,
+        0.0f, -0.5f,  0.5f,   1.0f, 0.0f, 1.0f,
+        0.0f,  0.5f,  0.5f,   1.0f, 0.0f, 0.0f
     };
 
     // Массив для рисование квадрата 
@@ -206,8 +206,6 @@ namespace MyEngine {
             p_shader_program->setMatrix4("model_matrix", model_matrix);
 
             // Задаём камеру в пространстве
-            camera.set_position_rotation(glm::vec3(camera_position[0], camera_position[1], camera_position[2]),
-                glm::vec3(camera_rotation[0], camera_rotation[1], camera_rotation[2]));
             camera.set_projection_mode(perspective_camera ? Camera::ProjectionMode::Perspective : Camera::ProjectionMode::Orthographic);
             p_shader_program->setMatrix4("view_projection_matrix", camera.get_projection_matrix() * camera.get_view_matrix());
 

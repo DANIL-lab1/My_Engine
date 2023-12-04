@@ -1,6 +1,7 @@
 #include "MyEngineCore/Camera.hpp"
 
 #include <glm/trigonometric.hpp>
+#include <glm/ext/matrix_transform.hpp>
 
 namespace MyEngine {
     // Конструктор камеры
@@ -15,34 +16,36 @@ namespace MyEngine {
     // Обновление матрицы вида
     void Camera::update_view_matrix() {
 
-        // Матрица поворота по x
-        float rotate_in_radians_x = glm::radians(-m_rotation.x);
-        glm::mat4 rotate_matrix_x(1, 0, 0, 0,
-            0, cos(rotate_in_radians_x), sin(rotate_in_radians_x), 0,
-            0, -sin(rotate_in_radians_x), cos(rotate_in_radians_x), 0,
-            0, 0, 0, 1);
+        // X - Roll, Y - Pitch, Z - Yaw
+        const float roll_in_radians = glm::radians(m_rotation.x);
+        const float pitch_in_radians = glm::radians(m_rotation.y);
+        const float yaw_in_radians = glm::radians(m_rotation.z);
 
-        // Матрица поворота по y
-        float rotate_in_radians_y = glm::radians(-m_rotation.y);
-        glm::mat4 rotate_matrix_y(cos(rotate_in_radians_y), 0, -sin(rotate_in_radians_y), 0,
-            0, 1, 0, 0,
-            sin(rotate_in_radians_y), 0, cos(rotate_in_radians_y), 0,
-            0, 0, 0, 1);
-        
-        // Матрица поворота по z
-        float rotate_in_radians_z = glm::radians(-m_rotation.z);
-        glm::mat4 rotate_matrix(cos(rotate_in_radians_z), sin(rotate_in_radians_z), 0, 0,
-            -sin(rotate_in_radians_z), cos(rotate_in_radians_z), 0, 0,
-            0, 0, 1, 0,
-            0, 0, 0, 1);
+        // Матрицы для каждой оси
 
-        // Матрица перемещения
-        glm::mat4 translate_matrix(1, 0, 0, 0,
-            0, 1, 0, 0,
-            0, 0, 1, 0,
-            -m_position[0], -m_position[1], -m_position[2], 1);
+        // Матрица x
+        const glm::mat3 rotate_matrix_x(1, 0, 0,
+            0, cos(roll_in_radians), sin(roll_in_radians),
+            0, -sin(roll_in_radians), cos(roll_in_radians));
 
-        m_view_matrix = rotate_matrix_y * rotate_matrix_x * translate_matrix;
+        // Матрица y
+        const glm::mat3 rotate_matrix_y(cos(pitch_in_radians), 0, -sin(pitch_in_radians),
+            0, 1, 0,
+            sin(pitch_in_radians), 0, cos(pitch_in_radians));
+
+        // Матрица z
+        const glm::mat3 rotate_matrix_z(cos(yaw_in_radians), sin(yaw_in_radians), 0,
+            -sin(yaw_in_radians), cos(yaw_in_radians), 0,
+            0, 0, 1);
+    
+        // Матрица Эйлера и преобразование с помощью этой матрицы
+        const glm::mat3 euler_rotate_matrix = rotate_matrix_z * rotate_matrix_y * rotate_matrix_x;
+        m_direction = glm::normalize(euler_rotate_matrix * s_world_forward);
+        m_right = glm::normalize(euler_rotate_matrix * s_world_right);
+        m_up = glm::cross(m_right, m_direction);
+
+        // Матрица вида
+        m_view_matrix = glm::lookAt(m_position, m_position + m_direction, m_up);
     }
 
     // Обновления матрицы проекции
@@ -97,5 +100,33 @@ namespace MyEngine {
     void Camera::set_projection_mode(const ProjectionMode projection_mode) {
         m_projection_mode = projection_mode;
         update_projection_matrix();
+    }
+
+    // Движение вперёд
+    void Camera::move_forward(const float delta) {
+        m_position += m_direction * delta;
+        update_view_matrix();
+    }
+
+    // Движение вправо
+    void Camera::move_right(const float delta) {
+        m_position += m_right * delta;
+        update_view_matrix();
+    }
+
+    // Движение вверх
+    void Camera::move_up(const float delta) {
+        m_position += m_up * delta;
+        update_view_matrix();
+    }
+
+    // Перемещение и вращение одновременно
+    void Camera::add_movement_and_rotatition(const glm::vec3& movement_delta, const glm::vec3& rotation_delta)
+    {
+        m_position += m_direction * movement_delta.x;
+        m_position += m_right * movement_delta.y;
+        m_position += m_up * movement_delta.z;
+        m_rotation += rotation_delta;
+        update_view_matrix();
     }
 }
