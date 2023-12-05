@@ -8,11 +8,11 @@
 #include "MyEngineCore/Rendering/OpenGL/VertexBuffer.hpp"
 #include "MyEngineCore/Rendering/OpenGL/VertexArray.hpp"
 #include "MyEngineCore/Rendering/OpenGL/IndexBuffer.hpp"
+#include "MyEngineCore/Rendering/OpenGL/Texture_2D.hpp"
 #include "MyEngineCore/Camera.hpp"
 #include "MyEngineCore/Rendering/OpenGL/Render_OpenGL.hpp"
 #include "MyEngineCore/Modules/UIModule.hpp"
 
-#include <glad/glad.h>
 #include <imgui/imgui.h>
 #include <glm/mat3x3.hpp>
 #include <glm/trigonometric.hpp>
@@ -24,10 +24,10 @@ namespace MyEngine {
 
     // Массив с позицией, цветом и координатой текстуры
     GLfloat positions_colors_coords[] = {
-        0.0f, -0.5f, -0.5f,   1.0f, 1.0f, 0.0f,   2.f, -1.f,
-        0.0f,  0.5f, -0.5f,   0.0f, 1.0f, 1.0f,  -1.f, -1.f,
-        0.0f, -0.5f,  0.5f,   1.0f, 0.0f, 1.0f,   2.f,  2.f,
-        0.0f,  0.5f,  0.5f,   1.0f, 0.0f, 0.0f,  -1.f,  2.f
+        0.0f, -0.5f, -0.5f,   1.0f, 1.0f, 0.0f,   10.f, 0.f,
+        0.0f,  0.5f, -0.5f,   0.0f, 1.0f, 1.0f,   0.f,  0.f,
+        0.0f, -0.5f,  0.5f,   1.0f, 0.0f, 1.0f,   10.f, 10.f,
+        0.0f,  0.5f,  0.5f,   1.0f, 0.0f, 0.0f,   0.f,  10.f
     };
 
     // Массив для рисование квадрата 
@@ -145,9 +145,11 @@ namespace MyEngine {
 
     // Указатель на шейдерную программа и обработчик
     std::unique_ptr<ShaderProgram> p_shader_program;
-    // Указатель на двойной вертексный буфер и одиначный вертексный буфер
+    // Указатель на двойной вертексный буфер, текстура смайлика и текстура двух квадратов и одиначный вертексный буфер
     std::unique_ptr<VertexBuffer> p_positions_colors_vbo;
     std::unique_ptr<IndexBuffer> p_index_buffer;
+    std::unique_ptr<Texture2D> p_texture_smile;
+    std::unique_ptr<Texture2D> p_texture_quads;
     std::unique_ptr<VertexArray> p_vao;
     // Массивы для работы с матрицой смежности (сжатие/растяжение, вращение и перемещение) 
     float scale[3] = { 1.f, 1.f, 1.f };
@@ -240,33 +242,15 @@ namespace MyEngine {
         const unsigned int channels = 3;
         auto* data = new unsigned char[width * height * channels];
 
-        // Создание текстуры смайлика, инициализация, отрисовка и задание параметров
-        GLuint textureHandle_Smile;
-        glCreateTextures(GL_TEXTURE_2D, 1, &textureHandle_Smile);
-        glTextureStorage2D(textureHandle_Smile, 1, GL_RGB8, width, height);
+        // Создание текстуры смайлика, инициализация и присваивание текущего параметра
         generate_smile_texture(data, width, height);
-        glTextureSubImage2D(textureHandle_Smile, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, data);
-        // Обработка, если выходит за края изображения
-        glTextureParameteri(textureHandle_Smile, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTextureParameteri(textureHandle_Smile, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTextureParameteri(textureHandle_Smile, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTextureParameteri(textureHandle_Smile, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        // Подключение текстуры
-        glBindTextureUnit(0, textureHandle_Smile);
-
-        // Создание текстуры двух квадратов, инициализация, отрисовка и задание параметров
-        GLuint textureHandle_Quads;
-        glCreateTextures(GL_TEXTURE_2D, 1, &textureHandle_Quads);
-        glTextureStorage2D(textureHandle_Quads, 1, GL_RGB8, width, height);
+        p_texture_smile = std::make_unique<Texture2D>(data, width, height);
+        p_texture_smile->bind(0);
+        
+        // Создание текстуры двух квадратов, инициализация и присваивание текущего параметра
         generate_quads_texture(data, width, height);
-        // Обработка, если выходит за края изображения
-        glTextureSubImage2D(textureHandle_Quads, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, data);
-        glTextureParameteri(textureHandle_Quads, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTextureParameteri(textureHandle_Quads, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTextureParameteri(textureHandle_Quads, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTextureParameteri(textureHandle_Quads, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        // Подключение текстуры
-        glBindTextureUnit(1, textureHandle_Quads);
+        p_texture_quads = std::make_unique<Texture2D>(data, width, height);
+        p_texture_quads->bind(1);
 
         delete[] data;
 
@@ -381,10 +365,6 @@ namespace MyEngine {
         }
         m_pWindow = nullptr;
         //---------------------------------------//
-
-        // Удаление памяти для текстуры
-        glDeleteTextures(1, &textureHandle_Smile);
-        glDeleteTextures(1, &textureHandle_Quads);
 
         return 0;
 	}

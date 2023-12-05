@@ -1,10 +1,10 @@
 #pragma once
 
 #include <glm/glm/mat4x4.hpp>
+
 namespace MyEngine {
 
-    class ShaderProgram
-    {
+    class ShaderProgram {
     public:
         // Создаём конструктор, копирующий конструктор, оператор присваивания и деструктор
         ShaderProgram(const char* vertex_shader_src, const char* fragment_shader_src);
