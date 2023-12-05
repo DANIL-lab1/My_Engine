@@ -17,6 +17,7 @@ namespace MyEngine {
     const glm::mat4& Camera::get_view_matrix(){
         if (m_update_view_matrix){
             update_view_matrix();
+            m_update_view_matrix = false;
         }
         return m_view_matrix;
     }

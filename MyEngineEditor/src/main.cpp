@@ -111,7 +111,7 @@ int main() {
 	auto p_MyEngineEditor = make_unique<MyEngineEditor>();
 
 	// Изначальные настройки приложения
-	int returnCode = p_MyEngineEditor ->start(1024, 768, "My Engine Editor");
+	int returnCode = p_MyEngineEditor ->start(1024, 1024, "My Engine Editor");
 
 	//cin.get();
 

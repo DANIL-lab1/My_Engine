@@ -12,6 +12,7 @@
 #include "MyEngineCore/Rendering/OpenGL/Render_OpenGL.hpp"
 #include "MyEngineCore/Modules/UIModule.hpp"
 
+#include <glad/glad.h>
 #include <imgui/imgui.h>
 #include <glm/mat3x3.hpp>
 #include <glm/trigonometric.hpp>
@@ -21,32 +22,100 @@
 
 namespace MyEngine {
 
-    // Массив с позициями и цветом одновременно
-    GLfloat positions_colors2[] = {
-        0.0f, -0.5f, -0.5f,   1.0f, 1.0f, 0.0f,
-        0.0f,  0.5f, -0.5f,   0.0f, 1.0f, 1.0f,
-        0.0f, -0.5f,  0.5f,   1.0f, 0.0f, 1.0f,
-        0.0f,  0.5f,  0.5f,   1.0f, 0.0f, 0.0f
+    // Массив с позицией, цветом и координатой текстуры
+    GLfloat positions_colors_coords[] = {
+        0.0f, -0.5f, -0.5f,   1.0f, 1.0f, 0.0f,   2.f, -1.f,
+        0.0f,  0.5f, -0.5f,   0.0f, 1.0f, 1.0f,  -1.f, -1.f,
+        0.0f, -0.5f,  0.5f,   1.0f, 0.0f, 1.0f,   2.f,  2.f,
+        0.0f,  0.5f,  0.5f,   1.0f, 0.0f, 0.0f,  -1.f,  2.f
     };
 
     // Массив для рисование квадрата 
     GLuint indices[] = { 0, 1, 2, 3, 2, 1 };
 
+    // Функция отрисовки текстуры
+    void generate_circle(unsigned char* data, const unsigned int width, const unsigned int height, const unsigned int center_x,
+        const unsigned int center_y, const unsigned int radius, const unsigned char color_r, const unsigned char color_g,
+        const unsigned char color_b){
+        for (unsigned int x = 0; x < width; ++x){
+            for (unsigned int y = 0; y < height; ++y){
+                if ((x - center_x) * (x - center_x) + (y - center_y) * (y - center_y) < radius * radius){
+                    data[3 * (x + width * y) + 0] = color_r;
+                    data[3 * (x + width * y) + 1] = color_g;
+                    data[3 * (x + width * y) + 2] = color_b;
+                }
+            }
+        }
+    }
+
+    // Генерация текстуры смайлика
+    void generate_smile_texture(unsigned char* data, const unsigned int width, const unsigned int height){
+        // background
+        for (unsigned int x = 0; x < width; ++x){
+            for (unsigned int y = 0; y < height; ++y){
+                data[3 * (x + width * y) + 0] = 200;
+                data[3 * (x + width * y) + 1] = 191;
+                data[3 * (x + width * y) + 2] = 231;
+            }
+        }
+
+        // face - лицо
+        generate_circle(data, width, height, width * 0.5, height * 0.5, width * 0.4, 255, 255, 0);
+
+        // smile - улыбка/рот
+        generate_circle(data, width, height, width * 0.5, height * 0.4, width * 0.2, 0, 0, 0);
+        generate_circle(data, width, height, width * 0.5, height * 0.45, width * 0.2, 255, 255, 0);
+
+        // eyes - глаза
+        generate_circle(data, width, height, width * 0.35, height * 0.6, width * 0.07, 255, 0, 255);
+        generate_circle(data, width, height, width * 0.65, height * 0.6, width * 0.07, 0, 0, 255);
+    }
+
+    // Генерация текстуры двух квадратов
+    void generate_quads_texture(unsigned char* data, const unsigned int width, const unsigned int height) {
+        for (unsigned int x = 0; x < width; ++x){
+            for (unsigned int y = 0; y < height; ++y){
+                if ((x < width / 2 && y < height / 2) || x >= width / 2 && y >= height / 2){
+                    data[3 * (x + width * y) + 0] = 0;
+                    data[3 * (x + width * y) + 1] = 0;
+                    data[3 * (x + width * y) + 2] = 0;
+                }
+                else {
+                    data[3 * (x + width * y) + 0] = 255;
+                    data[3 * (x + width * y) + 1] = 255;
+                    data[3 * (x + width * y) + 2] = 255;
+                }
+            }
+        }
+    }
+
     // Вертексный шейдер (трасформация координат и вычисления связанные с ними) 
     const char* vertex_shader =
         R"( // Версия шейдера
         #version 460
-        // Входные данные шейдера (позиция и цвет, матрица модели и матрица проекции)
+        // Входные данные шейдера (позиция и цвет, координаты текстур)
         layout(location = 0) in vec3 vertex_position;
         layout(location = 1) in vec3 vertex_color;
+        layout(location = 2) in vec2 texture_coord;
+
+        // Матрица вида, матрица проекции и переменной кадра
         uniform mat4 model_matrix;
-        uniform mat4 view_projection_matrix; 
-        // Выходные данные шейдера (векторы)
+        uniform mat4 view_projection_matrix;
+        uniform int current_frame;  
+
+        // Выходные данные шейдера (векторы и координаты тексты смайлика и двух квадратов)
         out vec3 color;
+        out vec2 tex_coord_smile;
+        out vec2 tex_coord_quads;
+
         // Функция для цвета
         void main() {
-            // Задаём цвет вертекса
+
+            // Задаём цвет вертекса и текстуры (смайлика и двух квадратов)
             color = vertex_color;
+            tex_coord_smile = texture_coord;
+            tex_coord_quads = texture_coord + vec2(current_frame / 1000.f, current_frame / 1000.f);
+
             // Задаём позицию вертекса (4 параметр - перспектива)
            gl_Position = view_projection_matrix * model_matrix * vec4(vertex_position, 1.0); 
         })";
@@ -55,14 +124,23 @@ namespace MyEngine {
     const char* fragment_shader =
         R"(// Версия шейдера
         #version 460
-        // Входные данные (цвет)
+
+        // Входные данные (цвет и координаты текстуры, хранение текстур)
         in vec3 color;
+        in vec2 tex_coord_smile;
+        in vec2 tex_coord_quads;
+        layout (binding = 0) uniform sampler2D InTexture_Smile;
+        layout (binding = 1) uniform sampler2D InTexture_Quads;
+
         // Выходные данные (итоговый цвет)
         out vec4 frag_color;
+
         // Функция для задания цвета
         void main() {
-            // Задаём цвет (4 параметр - прозрачность)
-           frag_color = vec4(color, 1.0);
+
+           // Задаём цвет (4 параметр - прозрачность) и текстуру
+           //frag_color = vec4(color, 1.0);
+              frag_color = texture(InTexture_Smile, tex_coord_smile) * texture(InTexture_Quads, tex_coord_quads);
         })";
 
     // Указатель на шейдерную программа и обработчик
@@ -156,13 +234,47 @@ namespace MyEngine {
                 m_event_dispatcher.dispatch(event);
             });
 
+        // Параметры для текстуры 
+        const unsigned int width = 1000;
+        const unsigned int height = 1000;
+        const unsigned int channels = 3;
+        auto* data = new unsigned char[width * height * channels];
 
+        // Создание текстуры смайлика, инициализация, отрисовка и задание параметров
+        GLuint textureHandle_Smile;
+        glCreateTextures(GL_TEXTURE_2D, 1, &textureHandle_Smile);
+        glTextureStorage2D(textureHandle_Smile, 1, GL_RGB8, width, height);
+        generate_smile_texture(data, width, height);
+        glTextureSubImage2D(textureHandle_Smile, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, data);
+        // Обработка, если выходит за края изображения
+        glTextureParameteri(textureHandle_Smile, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTextureParameteri(textureHandle_Smile, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTextureParameteri(textureHandle_Smile, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTextureParameteri(textureHandle_Smile, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        // Подключение текстуры
+        glBindTextureUnit(0, textureHandle_Smile);
+
+        // Создание текстуры двух квадратов, инициализация, отрисовка и задание параметров
+        GLuint textureHandle_Quads;
+        glCreateTextures(GL_TEXTURE_2D, 1, &textureHandle_Quads);
+        glTextureStorage2D(textureHandle_Quads, 1, GL_RGB8, width, height);
+        generate_quads_texture(data, width, height);
+        // Обработка, если выходит за края изображения
+        glTextureSubImage2D(textureHandle_Quads, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glTextureParameteri(textureHandle_Quads, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTextureParameteri(textureHandle_Quads, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTextureParameteri(textureHandle_Quads, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTextureParameteri(textureHandle_Quads, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        // Подключение текстуры
+        glBindTextureUnit(1, textureHandle_Quads);
+
+        delete[] data;
 
         // Работа с шейдерной программой
         //---------------------------------------//
         // Инициализация программы шейдеров с выбранными шейдерами
         p_shader_program = std::make_unique<ShaderProgram>(vertex_shader, fragment_shader);
-        if (!p_shader_program->isCompiled()) { return false; }
+        if (!p_shader_program->is_compiled()) { return false; }
 
         // Два массива памяти для видеокарты
 
@@ -171,21 +283,26 @@ namespace MyEngine {
             ShaderDataType::Float3
         };
 
-        BufferLayout buffer_layout_2vec3{
+        BufferLayout buffer_layout_vec3_vec3_vec2{
             ShaderDataType::Float3,
-            ShaderDataType::Float3
+            ShaderDataType::Float3,
+            ShaderDataType::Float2
         };
 
         // Обработка значений
 
         // Добавляем буферы позиции и цвета в массив соответственно
         p_vao = std::make_unique<VertexArray>();
-        p_positions_colors_vbo = std::make_unique<VertexBuffer>(positions_colors2, sizeof(positions_colors2), buffer_layout_2vec3);
+        p_positions_colors_vbo = std::make_unique<VertexBuffer>(positions_colors_coords, sizeof(positions_colors_coords), 
+            buffer_layout_vec3_vec3_vec2);
         p_index_buffer = std::make_unique<IndexBuffer>(indices, sizeof(indices) / sizeof(GLuint));
 
         p_vao->add_vertex_buffer(*p_positions_colors_vbo);
         p_vao->set_index_buffer(*p_index_buffer);
         //---------------------------------------//
+
+        // Переменная кадров
+        static int current_frame = 0;
 
         // Пока окно не закрыто, обновляем
         while (!m_bCloseWindow) {
@@ -217,11 +334,12 @@ namespace MyEngine {
                 translate[0], translate[1], translate[2], 1);
 
             glm::mat4 model_matrix = translate_matrix * rotate_matrix * scale_matrix;
-            p_shader_program->setMatrix4("model_matrix", model_matrix);
+            p_shader_program->set_matrix4("model_matrix", model_matrix);
+            p_shader_program->set_int("current_frame", current_frame++);
 
             // Задаём камеру в пространстве
             camera.set_projection_mode(perspective_camera ? Camera::ProjectionMode::Perspective : Camera::ProjectionMode::Orthographic);
-            p_shader_program->setMatrix4("view_projection_matrix", camera.get_projection_matrix() * camera.get_view_matrix());
+            p_shader_program->set_matrix4("view_projection_matrix", camera.get_projection_matrix()* camera.get_view_matrix());
 
             // Отрисовка рнедера
             Render_OpenGL::draw(*p_vao);
@@ -263,6 +381,10 @@ namespace MyEngine {
         }
         m_pWindow = nullptr;
         //---------------------------------------//
+
+        // Удаление памяти для текстуры
+        glDeleteTextures(1, &textureHandle_Smile);
+        glDeleteTextures(1, &textureHandle_Quads);
 
         return 0;
 	}

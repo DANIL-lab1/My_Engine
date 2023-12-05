@@ -65,7 +65,7 @@ namespace MyEngine
             return;
         }
         else{
-            m_isCompiled = true;
+            m_is_compiled = true;
         }
 
         // Удаление использванных шейдеров
@@ -94,24 +94,29 @@ namespace MyEngine
     ShaderProgram& ShaderProgram::operator=(ShaderProgram&& shaderProgram){
         glDeleteProgram(m_id);
         m_id = shaderProgram.m_id;
-        m_isCompiled = shaderProgram.m_isCompiled;
+        m_is_compiled = shaderProgram.m_is_compiled;
 
         shaderProgram.m_id = 0;
-        shaderProgram.m_isCompiled = false;
+        shaderProgram.m_is_compiled = false;
         return *this;
     }
 
     // Конструктор перемещения
     ShaderProgram::ShaderProgram(ShaderProgram&& shaderProgram){
         m_id = shaderProgram.m_id;
-        m_isCompiled = shaderProgram.m_isCompiled;
+        m_is_compiled = shaderProgram.m_is_compiled;
 
         shaderProgram.m_id = 0;
-        shaderProgram.m_isCompiled = false;
+        shaderProgram.m_is_compiled = false;
     }
 
     // Установка матрицы
-    void ShaderProgram::setMatrix4(const char* name, const glm::mat4& matrix) const {
+    void ShaderProgram::set_matrix4(const char* name, const glm::mat4& matrix) const {
         glUniformMatrix4fv(glGetUniformLocation(m_id, name), 1, GL_FALSE, glm::value_ptr(matrix));
+    }
+
+    // Установка кадров
+    void ShaderProgram::set_int(const char* name, const int value) const {
+        glUniform1i(glGetUniformLocation(m_id, name), value);
     }
 }
