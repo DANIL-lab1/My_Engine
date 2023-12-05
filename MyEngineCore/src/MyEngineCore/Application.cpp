@@ -15,6 +15,7 @@
 
 #include <imgui/imgui.h>
 #include <glm/mat3x3.hpp>
+#include <glm/ext/matrix_transform.hpp>
 #include <glm/trigonometric.hpp>
 #include <GLFW/glfw3.h>
 
@@ -22,16 +23,33 @@
 
 namespace MyEngine {
 
-    // Массив с позицией, цветом и координатой текстуры
-    GLfloat positions_colors_coords[] = {
-        0.0f, -0.5f, -0.5f,   1.0f, 1.0f, 0.0f,   10.f, 0.f,
-        0.0f,  0.5f, -0.5f,   0.0f, 1.0f, 1.0f,   0.f,  0.f,
-        0.0f, -0.5f,  0.5f,   1.0f, 0.0f, 1.0f,   10.f, 10.f,
-        0.0f,  0.5f,  0.5f,   1.0f, 0.0f, 0.0f,   0.f,  10.f
+    // Отрисовка куба на экране
+
+    // Массив с позициями
+    GLfloat positions_coords[] = {
+        // front
+        -1.0f, -1.f, -1.f,   1.f, 0.f,
+        -1.0f,  1.f, -1.f,   0.f, 0.f,
+        -1.0f, -1.f,  1.f,   1.f, 1.f,
+        -1.0f,  1.f,  1.f,   0.f, 1.f,
+
+        // back
+         1.0f, -1.f, -1.f,   1.f, 0.f,
+         1.0f,  1.f, -1.f,   0.f, 0.f,
+         1.0f, -1.f,  1.f,   1.f, 1.f,
+         1.0f,  1.f,  1.f,   0.f, 1.f
     };
 
-    // Массив для рисование квадрата 
-    GLuint indices[] = { 0, 1, 2, 3, 2, 1 };
+    // Массив для отрисовки граней 
+    GLuint indices[] = {
+        0, 1, 2, 3, 2, 1,
+        0, 1, 2, 3, 2, 1, // front
+        4, 5, 6, 7, 6, 5, // back
+        0, 4, 6, 0, 2, 6, // right
+        1, 5, 3, 3, 7, 5, // left
+        3, 7, 2, 7, 6, 2, // top
+        1, 5, 0, 5, 0, 4  // bottom
+    };
 
     // Функция отрисовки текстуры
     void generate_circle(unsigned char* data, const unsigned int width, const unsigned int height, const unsigned int center_x,
@@ -93,10 +111,9 @@ namespace MyEngine {
     const char* vertex_shader =
         R"( // Версия шейдера
         #version 460
-        // Входные данные шейдера (позиция и цвет, координаты текстур)
+        // Входные данные шейдера (позиция и координаты текстуры)
         layout(location = 0) in vec3 vertex_position;
-        layout(location = 1) in vec3 vertex_color;
-        layout(location = 2) in vec2 texture_coord;
+        layout(location = 1) in vec2 texture_coord;
 
         // Матрица вида, матрица проекции и переменной кадра
         uniform mat4 model_matrix;
@@ -104,15 +121,13 @@ namespace MyEngine {
         uniform int current_frame;  
 
         // Выходные данные шейдера (векторы и координаты тексты смайлика и двух квадратов)
-        out vec3 color;
         out vec2 tex_coord_smile;
         out vec2 tex_coord_quads;
 
         // Функция для цвета
         void main() {
 
-            // Задаём цвет вертекса и текстуры (смайлика и двух квадратов)
-            color = vertex_color;
+            // Задаём текстуры (смайлика и двух квадратов)
             tex_coord_smile = texture_coord;
             tex_coord_quads = texture_coord + vec2(current_frame / 1000.f, current_frame / 1000.f);
 
@@ -125,8 +140,7 @@ namespace MyEngine {
         R"(// Версия шейдера
         #version 460
 
-        // Входные данные (цвет и координаты текстуры, хранение текстур)
-        in vec3 color;
+        // Входные данные (координаты текстуры и их хранение)
         in vec2 tex_coord_smile;
         in vec2 tex_coord_quads;
         layout (binding = 0) uniform sampler2D InTexture_Smile;
@@ -137,17 +151,15 @@ namespace MyEngine {
 
         // Функция для задания цвета
         void main() {
-
            // Задаём цвет (4 параметр - прозрачность) и текстуру
-           //frag_color = vec4(color, 1.0);
-              frag_color = texture(InTexture_Smile, tex_coord_smile) * texture(InTexture_Quads, tex_coord_quads);
+           frag_color = texture(InTexture_Smile, tex_coord_smile) * texture(InTexture_Quads, tex_coord_quads);
         })";
 
     // Указатель на шейдерную программа и обработчик
     std::unique_ptr<ShaderProgram> p_shader_program;
     // Указатель на двойной вертексный буфер, текстура смайлика и текстура двух квадратов и одиначный вертексный буфер
-    std::unique_ptr<VertexBuffer> p_positions_colors_vbo;
-    std::unique_ptr<IndexBuffer> p_index_buffer;
+    std::unique_ptr<VertexBuffer> p_cube_positions_vbo;
+    std::unique_ptr<IndexBuffer> p_cube_index_buffer;
     std::unique_ptr<Texture2D> p_texture_smile;
     std::unique_ptr<Texture2D> p_texture_quads;
     std::unique_ptr<VertexArray> p_vao;
@@ -157,6 +169,15 @@ namespace MyEngine {
     float translate[3] = { 0.f, 0.f, 0.f };
     // Создаём переменную для отрисовки заднего фона
     float m_background_color[4] = { 0.33f, 0.33f, 0.33f, 0.f };
+
+    // Добавляем ещё несколько кубов в сцену
+    std::array<glm::vec3, 5> positions = {
+            glm::vec3(-2.f, -2.f, -4.f),
+            glm::vec3(-5.f,  0.f,  3.f),
+            glm::vec3(2.f,  1.f, -2.f),
+            glm::vec3(4.f, -3.f,  3.f),
+            glm::vec3(1.f, -7.f,  1.f)
+    };
 
     // Реализация конструктора
 	Application::Application() {
@@ -267,8 +288,7 @@ namespace MyEngine {
             ShaderDataType::Float3
         };
 
-        BufferLayout buffer_layout_vec3_vec3_vec2{
-            ShaderDataType::Float3,
+        BufferLayout buffer_layout_vec3_vec2{
             ShaderDataType::Float3,
             ShaderDataType::Float2
         };
@@ -277,16 +297,19 @@ namespace MyEngine {
 
         // Добавляем буферы позиции и цвета в массив соответственно
         p_vao = std::make_unique<VertexArray>();
-        p_positions_colors_vbo = std::make_unique<VertexBuffer>(positions_colors_coords, sizeof(positions_colors_coords), 
-            buffer_layout_vec3_vec3_vec2);
-        p_index_buffer = std::make_unique<IndexBuffer>(indices, sizeof(indices) / sizeof(GLuint));
+        p_cube_positions_vbo = std::make_unique<VertexBuffer>(positions_coords, sizeof(positions_coords), buffer_layout_vec3_vec2);
+        p_cube_index_buffer = std::make_unique<IndexBuffer>(indices, sizeof(indices) / sizeof(GLuint));
 
-        p_vao->add_vertex_buffer(*p_positions_colors_vbo);
-        p_vao->set_index_buffer(*p_index_buffer);
+        p_vao->add_vertex_buffer(*p_cube_positions_vbo);
+        p_vao->set_index_buffer(*p_cube_index_buffer);
+
         //---------------------------------------//
 
         // Переменная кадров
         static int current_frame = 0;
+
+        // Включаем тест глубины
+        Render_OpenGL::enable_depth_test();
 
         // Пока окно не закрыто, обновляем
         while (!m_bCloseWindow) {
@@ -319,7 +342,7 @@ namespace MyEngine {
 
             glm::mat4 model_matrix = translate_matrix * rotate_matrix * scale_matrix;
             p_shader_program->set_matrix4("model_matrix", model_matrix);
-            p_shader_program->set_int("current_frame", current_frame++);
+            //p_shader_program->set_int("current_frame", current_frame++);
 
             // Задаём камеру в пространстве
             camera.set_projection_mode(perspective_camera ? Camera::ProjectionMode::Perspective : Camera::ProjectionMode::Orthographic);
@@ -328,6 +351,15 @@ namespace MyEngine {
             // Отрисовка рнедера
             Render_OpenGL::draw(*p_vao);
 
+            // Отрисовка кубов в сцене
+            for (const glm::vec3& current_position : positions){
+                glm::mat4 translate_matrix(1, 0, 0, 0,
+                    0, 1, 0, 0,
+                    0, 0, 1, 0,
+                    current_position[0], current_position[1], current_position[2], 1);
+                p_shader_program->set_matrix4("model_matrix", translate_matrix);
+                Render_OpenGL::draw(*p_vao);
+            }
 
             // Отрисовка интерфейса
             //---------------------------------------//
