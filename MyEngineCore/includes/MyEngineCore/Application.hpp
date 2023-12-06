@@ -24,6 +24,9 @@ namespace MyEngine {
 		// Переменная, в которой задаются настройки окна(ширина и высота) и название
 		virtual int start(unsigned int window_width, unsigned int window_height, const char* title);
 
+		// Функция для закрытия окна
+		void close();
+
 		// Функция, которая вызывается каждый раз для обновления событий в окне
 		virtual void on_update() {}
 
@@ -41,10 +44,16 @@ namespace MyEngine {
 		// Параметры для камеры и камера сама по себе
 		float camera_position[3] = { 0.f, 0.f, 1.f };
 		float camera_rotation[3] = { 0.f, 0.f, 0.f };
+		// Вид, ближайшее и дальнее изображения
+		float camera_fov = 60.f;
+		float camera_near_plane = 0.1f;
+		float camera_far_plane = 100.f;
 		bool perspective_camera = true;
 		Camera camera{ glm::vec3(-5.f, 0.f, 0.f) };
 
 	private:
+		void draw();
+
 		// Переменная для работы с окном
 		std::unique_ptr<class Window> m_pWindow;
 

@@ -189,28 +189,89 @@ namespace MyEngine {
         LOG_INFO("Closing Application!");
     }
 
+
+    void Application::draw(){
+        // Установка цвета рендера и очистка
+        Render_OpenGL::set_clear_color(m_background_color[0], m_background_color[1], m_background_color[2], m_background_color[3]);
+        Render_OpenGL::clear();
+
+        // Подключаем с помощью двойного массива
+        p_shader_program->bind();
+
+        // Матрица скарирования
+        glm::mat4 scale_matrix(scale[0], 0, 0, 0,
+            0, scale[1], 0, 0,
+            0, 0, scale[2], 0,
+            0, 0, 0, 1);
+
+        // Матрица вращения
+        float rotate_in_radians = glm::radians(rotate);
+        glm::mat4 rotate_matrix(cos(rotate_in_radians), sin(rotate_in_radians), 0, 0,
+            -sin(rotate_in_radians), cos(rotate_in_radians), 0, 0,
+            0, 0, 1, 0,
+            0, 0, 0, 1);
+
+        // Матрица перемещение
+        glm::mat4 translate_matrix(1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0,
+            translate[0], translate[1], translate[2], 1);
+
+        glm::mat4 model_matrix = translate_matrix * rotate_matrix * scale_matrix;
+        p_shader_program->set_matrix4("model_matrix", model_matrix);
+        //p_shader_program->set_int("current_frame", current_frame++);
+
+        // Задаём камеру в пространстве
+        camera.set_projection_mode(perspective_camera ? Camera::ProjectionMode::Perspective : Camera::ProjectionMode::Orthographic);
+        p_shader_program->set_matrix4("view_projection_matrix", camera.get_projection_matrix() * camera.get_view_matrix());
+
+        // Отрисовка рнедера
+        Render_OpenGL::draw(*p_vao);
+
+        // Отрисовка кубов в сцене
+        for (const glm::vec3& current_position : positions) {
+            glm::mat4 translate_matrix(1, 0, 0, 0,
+                0, 1, 0, 0,
+                0, 0, 1, 0,
+                current_position[0], current_position[1], current_position[2], 1);
+            p_shader_program->set_matrix4("model_matrix", translate_matrix);
+            Render_OpenGL::draw(*p_vao);
+        }
+
+        // Отрисовка окна (начало, отрисовка, конец)
+        UIModule::on_ui_draw_begin();
+        on_ui_draw();
+        UIModule::on_ui_draw_end();
+
+        m_pWindow->on_update();
+        on_update();
+    }
+
     // Функция запуска приложения. В данный момент мы передали ей код для создания базового окна
 	int Application::start(unsigned int window_width, unsigned int window_height, const char* title) {
         // Окно с параметрами: название, ширина и высота
         m_pWindow = std::make_unique<Window>(title, window_width, window_height);
-        
+        camera.set_viewport_size(static_cast<float>(window_width), static_cast<float>(window_height));
+
         // Обработка события движения мышки
         m_event_dispatcher.add_event_listener<EventMouseMoved>(
-            [](EventMouseMoved& event) {
+            [&](EventMouseMoved& event) {
                 //LOG_INFO("[MouseMoved] Mouse moved to {0}x{1}", event.x, event.y);
             });
 
         // Обработка события изменения расширения экрана пользователем
         m_event_dispatcher.add_event_listener<EventWindowResize>(
-            [](EventWindowResize& event) {
-                LOG_INFO("[Resized] Change size to {0}x{1}", event.height, event.width);
+            [&](EventWindowResize& event) {
+                LOG_INFO("[Resized] Changed size to {0}x{1}", event.width, event.height);
+                camera.set_viewport_size(event.width, event.height);
+                draw();
             });
 
         // Обработка события закрытия окна 
         m_event_dispatcher.add_event_listener<EventWindowClose>(
             [&](EventWindowClose& event) {
                 LOG_INFO("[Window Closed]");
-                m_bCloseWindow = true;
+                close();
             });
 
         // Обработка события нажатия мышки
@@ -305,95 +366,12 @@ namespace MyEngine {
 
         //---------------------------------------//
 
-        // Переменная кадров
-        static int current_frame = 0;
-
         // Включаем тест глубины
         Render_OpenGL::enable_depth_test();
 
         // Пока окно не закрыто, обновляем
         while (!m_bCloseWindow) {
-
-            // Установка цвета рендера и очистка
-            Render_OpenGL::set_clear_color(m_background_color[0], m_background_color[1], m_background_color[2], m_background_color[3]);
-            Render_OpenGL::clear();
-
-            // Подключаем с помощью двойного массива
-            p_shader_program->bind();
-
-            // Матрица скарирования
-            glm::mat4 scale_matrix(scale[0], 0, 0, 0,
-                0, scale[1], 0, 0,
-                0, 0, scale[2], 0,
-                0, 0, 0, 1);
-
-            // Матрица вращения
-            float rotate_in_radians = glm::radians(rotate);
-            glm::mat4 rotate_matrix(cos(rotate_in_radians), sin(rotate_in_radians), 0, 0,
-                -sin(rotate_in_radians), cos(rotate_in_radians), 0, 0,
-                0, 0, 1, 0,
-                0, 0, 0, 1);
-
-            // Матрица перемещение
-            glm::mat4 translate_matrix(1, 0, 0, 0,
-                0, 1, 0, 0,
-                0, 0, 1, 0,
-                translate[0], translate[1], translate[2], 1);
-
-            glm::mat4 model_matrix = translate_matrix * rotate_matrix * scale_matrix;
-            p_shader_program->set_matrix4("model_matrix", model_matrix);
-            //p_shader_program->set_int("current_frame", current_frame++);
-
-            // Задаём камеру в пространстве
-            camera.set_projection_mode(perspective_camera ? Camera::ProjectionMode::Perspective : Camera::ProjectionMode::Orthographic);
-            p_shader_program->set_matrix4("view_projection_matrix", camera.get_projection_matrix()* camera.get_view_matrix());
-
-            // Отрисовка рнедера
-            Render_OpenGL::draw(*p_vao);
-
-            // Отрисовка кубов в сцене
-            for (const glm::vec3& current_position : positions){
-                glm::mat4 translate_matrix(1, 0, 0, 0,
-                    0, 1, 0, 0,
-                    0, 0, 1, 0,
-                    current_position[0], current_position[1], current_position[2], 1);
-                p_shader_program->set_matrix4("model_matrix", translate_matrix);
-                Render_OpenGL::draw(*p_vao);
-            }
-
-            // Отрисовка интерфейса
-            //---------------------------------------//
-            // При отрисовки окна
-            UIModule::on_ui_draw_begin();
-            bool show = true;
-            UIModule::ShowExampleAppDockSpace(&show);
-
-            // Данные для окна
-            ImGui::ShowDemoWindow();
-
-            // Запуск работы приложения (инициализация, работа и закрытие)
-            ImGui::Begin("Background Color Window");
-            ImGui::ColorEdit4("Background Color", m_background_color);
-
-            // Задаём растяжение/сжатие, вращение и перемещение для объекта
-            ImGui::SliderFloat3("scale", scale, 0.f, 2.f);
-            ImGui::SliderFloat("rotate", &rotate, 0.f, 360.f);
-            ImGui::SliderFloat3("translate", translate, -1.f, 1.f);
-
-            // Задаём позицию, вращение и перспективу для камеры
-            ImGui::SliderFloat3("camera position", camera_position, -10.f, 10.f);
-            ImGui::SliderFloat3("camera rotation", camera_rotation, 0, 360.f);
-            ImGui::Checkbox("Perspective camera", &perspective_camera);
-
-            ImGui::End();
-            //---------------------------------------//
-            
-            on_ui_draw();
-            // При конце отрисовки
-            UIModule::on_ui_draw_end();
-
-            m_pWindow->on_update();
-            on_update();
+            draw();
         }
         m_pWindow = nullptr;
         //---------------------------------------//
@@ -406,4 +384,8 @@ namespace MyEngine {
         return m_pWindow->get_current_cursor_position();
     }
 
+    // Функция для закрытия окна 
+    void Application::close(){
+        m_bCloseWindow = true;
+    }
 }
