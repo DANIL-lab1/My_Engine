@@ -26,29 +26,54 @@ namespace MyEngine {
     // Отрисовка куба на экране
 
     // Массив с позициями
-    GLfloat positions_coords[] = {
-        // front
-        -1.0f, -1.f, -1.f,   1.f, 0.f,
-        -1.0f,  1.f, -1.f,   0.f, 0.f,
-        -1.0f, -1.f,  1.f,   1.f, 1.f,
-        -1.0f,  1.f,  1.f,   0.f, 1.f,
+    GLfloat pos_norm_uv[] = {
+        //    position             normal            UV                  index
 
-        // back
-         1.0f, -1.f, -1.f,   1.f, 0.f,
-         1.0f,  1.f, -1.f,   0.f, 0.f,
-         1.0f, -1.f,  1.f,   1.f, 1.f,
-         1.0f,  1.f,  1.f,   0.f, 1.f
+        // FRONT
+        -1.0f, -1.f, -1.f,    -1.f,  0.f,  0.f,     0.f, 0.f,              // 0
+        -1.0f,  1.f, -1.f,    -1.f,  0.f,  0.f,     1.f, 0.f,              // 1
+        -1.0f,  1.f,  1.f,    -1.f,  0.f,  0.f,     1.f, 1.f,              // 2
+        -1.0f, -1.f,  1.f,    -1.f,  0.f,  0.f,     0.f, 1.f,              // 3
+
+        // BACK                                  
+         1.0f, -1.f, -1.f,     1.f,  0.f,  0.f,     1.f, 0.f,              // 4
+         1.0f,  1.f, -1.f,     1.f,  0.f,  0.f,     0.f, 0.f,              // 5
+         1.0f,  1.f,  1.f,     1.f,  0.f,  0.f,     0.f, 1.f,              // 6
+         1.0f, -1.f,  1.f,     1.f,  0.f,  0.f,     1.f, 1.f,              // 7
+
+         // RIGHT
+         -1.0f,  1.f, -1.f,     0.f,  1.f,  0.f,     0.f, 0.f,              // 8
+          1.0f,  1.f, -1.f,     0.f,  1.f,  0.f,     1.f, 0.f,              // 9
+          1.0f,  1.f,  1.f,     0.f,  1.f,  0.f,     1.f, 1.f,              // 10
+         -1.0f,  1.f,  1.f,     0.f,  1.f,  0.f,     0.f, 1.f,              // 11
+
+         // LEFT
+         -1.0f, -1.f, -1.f,     0.f, -1.f,  0.f,     1.f, 0.f,              // 12
+          1.0f, -1.f, -1.f,     0.f, -1.f,  0.f,     0.f, 0.f,              // 13
+          1.0f, -1.f,  1.f,     0.f, -1.f,  0.f,     0.f, 1.f,              // 14
+         -1.0f, -1.f,  1.f,     0.f, -1.f,  0.f,     1.f, 1.f,              // 15
+
+         // TOP
+         -1.0f, -1.f,  1.f,     0.f,  0.f,  1.f,     0.f, 0.f,              // 16
+         -1.0f,  1.f,  1.f,     0.f,  0.f,  1.f,     1.f, 0.f,              // 17
+          1.0f,  1.f,  1.f,     0.f,  0.f,  1.f,     1.f, 1.f,              // 18
+          1.0f, -1.f,  1.f,     0.f,  0.f,  1.f,     0.f, 1.f,              // 19
+
+          // BOTTOM
+          -1.0f, -1.f, -1.f,    0.f,  0.f, -1.f,     0.f, 1.f,              // 20
+          -1.0f,  1.f, -1.f,    0.f,  0.f, -1.f,     1.f, 1.f,              // 21
+           1.0f,  1.f, -1.f,    0.f,  0.f, -1.f,     1.f, 0.f,              // 22
+           1.0f, -1.f, -1.f,    0.f,  0.f, -1.f,     0.f, 0.f,              // 23
     };
 
     // Массив для отрисовки граней 
     GLuint indices[] = {
-        0, 1, 2, 3, 2, 1,
-        0, 1, 2, 3, 2, 1, // front
-        4, 5, 6, 7, 6, 5, // back
-        0, 4, 6, 0, 2, 6, // right
-        1, 5, 3, 3, 7, 5, // left
-        3, 7, 2, 7, 6, 2, // top
-        1, 5, 0, 5, 0, 4  // bottom
+        0,   1,  2,  2,  3,  0, // front
+        4,   5,  6,  6,  7,  4, // back
+        8,   9, 10, 10, 11,  8, // right
+        12, 13, 14, 14, 15, 12, // left
+        16, 17, 18, 18, 19, 16, // top
+        20, 21, 22, 22, 23, 20  // bottom
     };
 
     // Функция отрисовки текстуры
@@ -111,9 +136,10 @@ namespace MyEngine {
     const char* vertex_shader =
         R"( // Версия шейдера
         #version 460
-        // Входные данные шейдера (позиция и координаты текстуры)
+        // Входные данные шейдера (позиция, нормаль и координаты текстуры)
         layout(location = 0) in vec3 vertex_position;
-        layout(location = 1) in vec2 texture_coord;
+        layout(location = 1) in vec3 vertex_normal;
+        layout(location = 2) in vec2 texture_coord;
 
         // Матрица вида, матрица проекции и переменной кадра
         uniform mat4 model_matrix;
@@ -123,6 +149,8 @@ namespace MyEngine {
         // Выходные данные шейдера (векторы и координаты тексты смайлика и двух квадратов)
         out vec2 tex_coord_smile;
         out vec2 tex_coord_quads;
+        out vec3 frag_position;
+        out vec3 frag_normal;
 
         // Функция для цвета
         void main() {
@@ -132,7 +160,10 @@ namespace MyEngine {
             tex_coord_quads = texture_coord + vec2(current_frame / 1000.f, current_frame / 1000.f);
 
             // Задаём позицию вертекса (4 параметр - перспектива)
-           gl_Position = view_projection_matrix * model_matrix * vec4(vertex_position, 1.0); 
+           frag_normal = mat3(transpose(inverse(model_matrix))) * vertex_normal;
+           vec4 vertex_position_world = model_matrix * vec4(vertex_position, 1.0);
+           frag_position = vertex_position_world.xyz;
+           gl_Position = view_projection_matrix * vertex_position_world;
         })";
 
     // Фрагментный шейдер
@@ -143,31 +174,76 @@ namespace MyEngine {
         // Входные данные (координаты текстуры и их хранение)
         in vec2 tex_coord_smile;
         in vec2 tex_coord_quads;
+        in vec3 frag_position;
+        in vec3 frag_normal;
+
         layout (binding = 0) uniform sampler2D InTexture_Smile;
         layout (binding = 1) uniform sampler2D InTexture_Quads;
+        
+        // Позиция камеры, позиция света и цвет света
+        uniform vec3 camera_position;
+        uniform vec3 light_position;
+        uniform vec3 light_color;
+
+        // Параметры для создание цвета (окружающий, рассеянный, отражённый)
+        uniform float ambient_factor;
+        uniform float diffuse_factor;
+        uniform float specular_factor;
+        uniform float shininess;
 
         // Выходные данные (итоговый цвет)
         out vec4 frag_color;
 
         // Функция для задания цвета
         void main() {
-           // Задаём цвет (4 параметр - прозрачность) и текстуру
-           frag_color = texture(InTexture_Smile, tex_coord_smile) * texture(InTexture_Quads, tex_coord_quads);
-        })";
+           // ambient
+              vec3 ambient = ambient_factor * light_color;
+              // diffuse
+              vec3 normal = normalize(frag_normal);
+              vec3 light_dir = normalize(light_position - frag_position);
+              vec3 diffuse = diffuse_factor * light_color * max(dot(normal, light_dir), 0.0);
+              // specular
+              vec3 view_dir = normalize(camera_position - frag_position);
+              vec3 reflect_dir = reflect(-light_dir, normal);
+              float specular_value = pow(max(dot(view_dir, reflect_dir), 0.0), shininess);
+              vec3 specular = specular_factor * specular_value * light_color;
+              //frag_color = texture(InTexture_Smile, tex_coord_smile) * texture(InTexture_Quads, tex_coord_quads);
+              frag_color = texture(InTexture_Smile, tex_coord_smile) * vec4(ambient + diffuse + specular, 1.f);
+           })";
 
-    // Указатель на шейдерную программа и обработчик
+    // Вертексный шейдер для света (повторяет обычный вертексный шейдер)
+    const char* light_source_vertex_shader =
+        R"(#version 460
+           layout(location = 0) in vec3 vertex_position;
+           layout(location = 1) in vec3 vertex_normal;
+           layout(location = 2) in vec2 texture_coord;
+           uniform mat4 model_matrix;
+           uniform mat4 view_projection_matrix;
+           void main() {
+              gl_Position = view_projection_matrix * model_matrix * vec4(vertex_position * 0.1f, 1.0);
+           }
+        )";
+
+    // Фрагментный шейдер для света
+    const char* light_source_fragment_shader =
+        R"(#version 460
+           out vec4 frag_color;
+           uniform vec3 light_color;
+           void main() {
+              frag_color = vec4(light_color, 1.f);
+           }
+        )";
+
+    // Указатели на шейдерные программы
     std::unique_ptr<ShaderProgram> p_shader_program;
-    // Указатель на двойной вертексный буфер, текстура смайлика и текстура двух квадратов и одиначный вертексный буфер
+    std::unique_ptr<ShaderProgram> p_light_source_shader_program;
+    // Указатели на двойной вертексный буфер, текстура смайлика и текстура двух квадратов и одиначный вертексный буфер
     std::unique_ptr<VertexBuffer> p_cube_positions_vbo;
     std::unique_ptr<IndexBuffer> p_cube_index_buffer;
     std::unique_ptr<Texture2D> p_texture_smile;
     std::unique_ptr<Texture2D> p_texture_quads;
-    std::unique_ptr<VertexArray> p_vao;
-    // Массивы для работы с матрицой смежности (сжатие/растяжение, вращение и перемещение) 
-    float scale[3] = { 1.f, 1.f, 1.f };
-    float rotate = 0.f;
-    float translate[3] = { 0.f, 0.f, 0.f };
-    // Создаём переменную для отрисовки заднего фона
+    std::unique_ptr<VertexArray> p_cube_vao;
+    // Переменная для отрисовки заднего фона
     float m_background_color[4] = { 0.33f, 0.33f, 0.33f, 0.f };
 
     // Добавляем ещё несколько кубов в сцену
@@ -198,35 +274,40 @@ namespace MyEngine {
         // Подключаем с помощью двойного массива
         p_shader_program->bind();
 
-        // Матрица скарирования
-        glm::mat4 scale_matrix(scale[0], 0, 0, 0,
+        // Матрица скалирования
+        /*glm::mat4 scale_matrix(scale[0], 0, 0, 0,
             0, scale[1], 0, 0,
             0, 0, scale[2], 0,
-            0, 0, 0, 1);
+            0, 0, 0, 1);*/
 
         // Матрица вращения
-        float rotate_in_radians = glm::radians(rotate);
+        /*float rotate_in_radians = glm::radians(rotate);
         glm::mat4 rotate_matrix(cos(rotate_in_radians), sin(rotate_in_radians), 0, 0,
             -sin(rotate_in_radians), cos(rotate_in_radians), 0, 0,
             0, 0, 1, 0,
-            0, 0, 0, 1);
+            0, 0, 0, 1);*/
 
         // Матрица перемещение
-        glm::mat4 translate_matrix(1, 0, 0, 0,
+        /*glm::mat4 translate_matrix(1, 0, 0, 0,
             0, 1, 0, 0,
             0, 0, 1, 0,
-            translate[0], translate[1], translate[2], 1);
+            translate[0], translate[1], translate[2], 1);*/
 
-        glm::mat4 model_matrix = translate_matrix * rotate_matrix * scale_matrix;
-        p_shader_program->set_matrix4("model_matrix", model_matrix);
+        // Отрисовка кадров
+        static int current_frame = 0;
         //p_shader_program->set_int("current_frame", current_frame++);
 
         // Задаём камеру в пространстве
-        camera.set_projection_mode(perspective_camera ? Camera::ProjectionMode::Perspective : Camera::ProjectionMode::Orthographic);
         p_shader_program->set_matrix4("view_projection_matrix", camera.get_projection_matrix() * camera.get_view_matrix());
 
         // Отрисовка рнедера
-        Render_OpenGL::draw(*p_vao);
+        p_shader_program->set_vec3("camera_position", camera.get_position());
+        p_shader_program->set_vec3("light_position", glm::vec3(light_source_position[0], light_source_position[1], light_source_position[2]));
+        p_shader_program->set_vec3("light_color", glm::vec3(light_source_color[0], light_source_color[1], light_source_color[2]));
+        p_shader_program->set_float("ambient_factor", ambient_factor);
+        p_shader_program->set_float("diffuse_factor", diffuse_factor);
+        p_shader_program->set_float("specular_factor", specular_factor);
+        p_shader_program->set_float("shininess", shininess);
 
         // Отрисовка кубов в сцене
         for (const glm::vec3& current_position : positions) {
@@ -235,7 +316,20 @@ namespace MyEngine {
                 0, 0, 1, 0,
                 current_position[0], current_position[1], current_position[2], 1);
             p_shader_program->set_matrix4("model_matrix", translate_matrix);
-            Render_OpenGL::draw(*p_vao);
+            Render_OpenGL::draw(*p_cube_vao);
+        }
+
+        // light source
+        {
+            p_light_source_shader_program->bind();
+            p_light_source_shader_program->set_matrix4("view_projection_matrix", camera.get_projection_matrix() * camera.get_view_matrix());
+            glm::mat4 translate_matrix(1, 0, 0, 0,
+                0, 1, 0, 0,
+                0, 0, 1, 0,
+                light_source_position[0], light_source_position[1], light_source_position[2], 1);
+            p_light_source_shader_program->set_matrix4("model_matrix", translate_matrix);
+            p_light_source_shader_program->set_vec3("light_color", glm::vec3(light_source_color[0], light_source_color[1], light_source_color[2]));
+            Render_OpenGL::draw(*p_cube_vao);
         }
 
         // Отрисовка окна (начало, отрисовка, конец)
@@ -349,7 +443,8 @@ namespace MyEngine {
             ShaderDataType::Float3
         };
 
-        BufferLayout buffer_layout_vec3_vec2{
+        BufferLayout buffer_layout_vec3_vec3_vec2{
+            ShaderDataType::Float3,
             ShaderDataType::Float3,
             ShaderDataType::Float2
         };
@@ -357,14 +452,21 @@ namespace MyEngine {
         // Обработка значений
 
         // Добавляем буферы позиции и цвета в массив соответственно
-        p_vao = std::make_unique<VertexArray>();
-        p_cube_positions_vbo = std::make_unique<VertexBuffer>(positions_coords, sizeof(positions_coords), buffer_layout_vec3_vec2);
+        p_cube_vao = std::make_unique<VertexArray>();
+        p_cube_positions_vbo = std::make_unique<VertexBuffer>(pos_norm_uv, sizeof(pos_norm_uv), buffer_layout_vec3_vec3_vec2);
         p_cube_index_buffer = std::make_unique<IndexBuffer>(indices, sizeof(indices) / sizeof(GLuint));
 
-        p_vao->add_vertex_buffer(*p_cube_positions_vbo);
-        p_vao->set_index_buffer(*p_cube_index_buffer);
+        p_cube_vao->add_vertex_buffer(*p_cube_positions_vbo);
+        p_cube_vao->set_index_buffer(*p_cube_index_buffer);
 
         //---------------------------------------//
+
+        // Подключение шейдерной программы света
+        p_light_source_shader_program = std::make_unique<ShaderProgram>(light_source_vertex_shader, light_source_fragment_shader);
+        if (!p_light_source_shader_program->is_compiled()){
+            return false;
+        }
+
 
         // Включаем тест глубины
         Render_OpenGL::enable_depth_test();

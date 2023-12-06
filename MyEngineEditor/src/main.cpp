@@ -15,7 +15,14 @@ class MyEngineEditor : public MyEngine::Application {
     // Координаты мышки x и y
     double m_initial_mouse_pos_x = 0.0;
     double m_initial_mouse_pos_y = 0.0;
-    
+    // Задаём значения для камеры(позиция и вращение, угол, ближайшее и дальнее изображение и включение перспективы)
+    float camera_position[3] = { 0.f, 0.f, 1.f };
+    float camera_rotation[3] = { 0.f, 0.f, 0.f };
+    float camera_fov = 60.f;
+    float camera_near_plane = 0.1f;
+    float camera_far_plane = 100.f;
+    bool perspective_camera = true;
+
     virtual void on_update() override {
         // Векторы перемещения
         glm::vec3 movement_delta{ 0, 0, 0 };
@@ -140,6 +147,16 @@ class MyEngineEditor : public MyEngine::Application {
         camera_far_plane = camera.get_far_clip_plane();
 
 		ImGui::Begin("Editor");
+
+        // Слайдер для света
+        ImGui::SliderFloat3("light source position", light_source_position, -10.f, 10.f);
+        ImGui::ColorEdit3("light source color", light_source_color);
+
+        ImGui::SliderFloat("ambient factor", &ambient_factor, 0.f, 1.f);
+        ImGui::SliderFloat("diffuse factor", &diffuse_factor, 0.f, 1.f);
+        ImGui::SliderFloat("specular factor", &specular_factor, 0.f, 1.f);
+        ImGui::SliderFloat("shininess", &shininess, 1.f, 128.f);
+
         if (ImGui::SliderFloat3("camera position", camera_position, -10.f, 10.f)){
             camera.set_position(glm::vec3(camera_position[0], camera_position[1], camera_position[2]));
         }

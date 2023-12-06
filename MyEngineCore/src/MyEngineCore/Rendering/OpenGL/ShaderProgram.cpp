@@ -119,4 +119,14 @@ namespace MyEngine
     void ShaderProgram::set_int(const char* name, const int value) const {
         glUniform1i(glGetUniformLocation(m_id, name), value);
     }
+
+    // Установка булевого значения
+    void ShaderProgram::set_float(const char* name, const float value) const {
+        glUniform1f(glGetUniformLocation(m_id, name), value);
+    }
+
+    // Установка вектора
+    void ShaderProgram::set_vec3(const char* name, const glm::vec3& value) const {
+        glUniform3f(glGetUniformLocation(m_id, name), value.x, value.y, value.z);
+    }
 }
