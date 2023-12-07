@@ -17,11 +17,12 @@ namespace MyEngine {
         ShaderProgram(const ShaderProgram&) = delete;
         ShaderProgram& operator=(const ShaderProgram&) = delete;
 
-        // Установка шейдера (установка шейдера и убирание шейдера, установка матрицы и установка кадра)
+        // Установка шейдера (установка шейдера и убирание шейдера, установка двух матриц и установка кадра)
         void bind() const;
         static void unbind();
         bool is_compiled() const { return m_is_compiled; }
         void set_matrix4(const char* name, const glm::mat4& matrix) const;
+        void set_matrix3(const char* name, const glm::mat3& matrix) const;
         void set_int(const char* name, const int value) const;
 
         // Установка float и vector_3 
