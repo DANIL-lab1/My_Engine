@@ -114,14 +114,4 @@ namespace MyEngine {
         : m_id(vertex_buffer.m_id), m_buffer_layout(std::move(vertex_buffer.m_buffer_layout)){
         vertex_buffer.m_id = 0;
     }
-
-    // Задание текущего вертексного буфера
-    void VertexBuffer::bind() const {
-        glBindBuffer(GL_ARRAY_BUFFER, m_id);
-    }
-
-    // Снимание текущую вертексного буфера
-    void VertexBuffer::unbind(){
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-    }
 }

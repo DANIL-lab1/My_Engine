@@ -70,9 +70,8 @@ namespace MyEngine {
         VertexBuffer& operator = (VertexBuffer&& vertexBuffer) noexcept;
         VertexBuffer(VertexBuffer&& vertexBuffer) noexcept;
 
-        // Установка вертексного буфера (установка и убирание)
-        void bind() const;
-        static void unbind();
+        // Установка вертексного буфера
+        unsigned int get_handle() const { return m_id; }
 
         // Упаковка данных в layout
         const BufferLayout& get_layout() const { return m_buffer_layout; }
