@@ -44,6 +44,10 @@ namespace MyEngine {
             return -1;
         }
 
+
+        // Создание контекста для обработки ошибок
+        glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+
         // Ошибка чтения данных
         m_pWindow = glfwCreateWindow(m_data.width, m_data.height, m_data.title.c_str(), nullptr, nullptr);
         if (!m_pWindow){
